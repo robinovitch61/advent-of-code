@@ -14,9 +14,12 @@ def update_seats(occupied, floor):
     occupied_adj = signal.convolve2d((occupied & ~floor), KERNEL, mode='same')
     becomes_occupied = ~floor & ~occupied & (occupied_adj == 0)
     becomes_empty = ~floor & occupied & (occupied_adj >= 4)
-    occupied[becomes_occupied] = True
-    occupied[becomes_empty] = False
-    return occupied
+    if np.any(becomes_empty) | np.any(becomes_occupied):
+        occupied[becomes_empty] = False
+        occupied[becomes_occupied] = True
+        return True
+    else:
+        return False
 
 
 def update_seats_2(occupied, floor):
@@ -43,27 +46,28 @@ def update_seats_2(occupied, floor):
                 total_visible_adjacent += visible_in_direction
         return total_visible_adjacent
 
+    not_floor = ~floor
+    seat_idxs = np.where(not_floor)
     occupied_adj = np.zeros_like(occupied, dtype=int)
-    for row, col in zip(*np.where(~floor)):
+    for row, col in zip(*seat_idxs):
         occupied_adj[row, col] = num_visible_adj(occupied, floor, row, col)
 
-    becomes_occupied = ~floor & ~occupied & (occupied_adj == 0)
-    becomes_empty = ~floor & occupied & (occupied_adj >= 5)
-    occupied[becomes_occupied] = True
-    occupied[becomes_empty] = False
-    return occupied
+    becomes_occupied = not_floor & ~occupied & (occupied_adj == 0)
+    becomes_empty = not_floor & occupied & (occupied_adj >= 5)
+    if np.any(becomes_empty) | np.any(becomes_occupied):
+        occupied[becomes_empty] = False
+        occupied[becomes_occupied] = True
+        return True
+    else:
+        return False
 
 
 def iterate_until_static(data, updater):
     floor = np.array([[seat == '.' for seat in list(row)] for row in data])
     occupied = np.zeros_like(floor, dtype=bool)
-
-    while True:
-        prev = occupied
-        occupied = updater(occupied.copy(), floor)
-        if (np.sum(prev ^ occupied) == 0):
-            break
-
+    did_update = True
+    while did_update:
+        did_update = updater(occupied, floor)
     return occupied
 
 
