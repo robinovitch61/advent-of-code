@@ -1,14 +1,12 @@
 
 with open('./16_input.txt', 'r') as f:
     INPUT_TEXT = f.read()
-
-
 # with open('./16_test_input.txt', 'r') as f:
 #     TEST_INPUT_TEXT = f.read()
 
 
 def test_first():
-    pass
+    print(INPUT_TEXT)
 
 
 def first():
