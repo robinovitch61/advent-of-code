@@ -23,6 +23,6 @@ def second():
 
 if __name__ == "__main__":
     test_first()
-    # first()
-    # test_second()
-    # second()
+    first()
+    test_second()
+    second()
