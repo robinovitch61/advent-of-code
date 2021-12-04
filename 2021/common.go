@@ -2,11 +2,13 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 )
 
-func ReadFile(path string) []string {
+func readFile(path string) []string {
 	var contents []string
 
 	file, err := os.Open(path)
@@ -24,4 +26,9 @@ func ReadFile(path string) []string {
 		log.Fatal(err)
 	}
 	return contents
+}
+
+func printDay(day int) {
+	fmt.Println("---------")
+	fmt.Println("Day " + strconv.Itoa(day))
 }

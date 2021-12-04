@@ -46,7 +46,8 @@ func day2P2(directions []string) int {
 }
 
 func day2() {
-	directions := ReadFile("./02_input.txt")
+	printDay(2)
+	directions := readFile("./02_input.txt")
 	fmt.Println(day2P1(directions))
 	fmt.Println(day2P2(directions))
 }

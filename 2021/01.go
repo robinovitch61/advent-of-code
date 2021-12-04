@@ -34,15 +34,13 @@ func day1P2(depths []int, windowSize int) int {
 }
 
 func day1() {
-	depthStrings := ReadFile("./01_input.txt")
-	//fmt.Println(cap(depthStrings)) // why is this 2560?
+	printDay(1)
+	depthStrings := readFile("./01_input.txt")
 	var depths = make([]int, len(depthStrings), len(depthStrings))
-	//fmt.Println(cap(depths)) // this is now 2000 as expected
 	for i, depth := range depthStrings {
 		intDepth, _ := strconv.Atoi(depth)
 		depths[i] = intDepth
 	}
-	//fmt.Println(cap(depths)) // still 2000
 	fmt.Println(day1P1(depths))
 	fmt.Println(day1P2(depths, 3))
 }
