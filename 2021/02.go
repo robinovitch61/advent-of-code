@@ -1,35 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 	"strings"
 )
 
-func ReadFile(path string) []string {
-	var contents []string
-
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		contents = append(contents, scanner.Text())
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-	return contents
-}
-
-func p1(directions []string) int {
+func day2P1(directions []string) int {
 	var horizontal, depth int = 0, 0
 	for _, direction := range directions {
 		split := strings.Split(direction, " ")
@@ -48,7 +25,7 @@ func p1(directions []string) int {
 	return horizontal * depth
 }
 
-func p2(directions []string) int {
+func day2P2(directions []string) int {
 	var horizontal, depth, aim int = 0, 0, 0
 	for _, direction := range directions {
 		split := strings.Split(direction, " ")
@@ -68,8 +45,8 @@ func p2(directions []string) int {
 	return horizontal * depth
 }
 
-func main() {
+func day2() {
 	directions := ReadFile("./02_input.txt")
-	fmt.Println(p1(directions))
-	fmt.Println(p2(directions))
+	fmt.Println(day2P1(directions))
+	fmt.Println(day2P2(directions))
 }
