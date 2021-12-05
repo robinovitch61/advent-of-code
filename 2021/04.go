@@ -54,18 +54,76 @@ func parseInput(input []string) Game {
 	return Game{numbers, boards}
 }
 
-func day4P1(game Game) int {
-	return 1
+func isWinner(board Board, drawn map[int]bool) bool {
+	winner := false
+	for i := 0; i < 5; i++ {
+		rowWinner := true
+		colWinner := true
+		for _, num := range board.values[i] {
+			if !drawn[num] {
+				rowWinner = false
+			}
+		}
+		for _, row := range board.values {
+			if !drawn[row[i]] {
+				colWinner = false
+			}
+		}
+		if rowWinner || colWinner {
+			winner = true
+		}
+	}
+	return winner
 }
 
-//func day4P2(diagnostics []string) int {
-//}
+func calcScore(board Board, drawn map[int]bool, lastDrawn int) int {
+	sum := 0
+	for down := 0; down < 5; down++ {
+		for across := 0; across < 5; across++ {
+			if val := board.values[down][across]; !drawn[val] {
+				sum += val
+			}
+		}
+	}
+	return sum * lastDrawn
+}
+
+func day4P1(game Game) int {
+	drawn := make(map[int]bool)
+	for _, num := range game.numbers {
+		drawn[num] = true
+		for _, board := range game.boards {
+			if isWinner(board, drawn) {
+				return calcScore(board, drawn, num)
+			}
+		}
+	}
+	return -1
+}
+
+func day4P2(game Game) int {
+	wonBoards := make(map[Board]bool)
+	drawn := make(map[int]bool)
+	for _, num := range game.numbers {
+		drawn[num] = true
+		for _, board := range game.boards {
+			if !wonBoards[board] {
+				if isWinner(board, drawn) {
+					wonBoards[board] = true
+					if len(wonBoards) == len(game.boards) {
+						return calcScore(board, drawn, num)
+					}
+				}
+			}
+		}
+	}
+	return -1
+}
 
 func day4() {
 	printDay(4)
 	input := readFile("./04_input.txt")
 	game := parseInput(input)
-	fmt.Println(game)
 	fmt.Println(day4P1(game))
-	//fmt.Println(day4P2(diagnostics))
+	fmt.Println(day4P2(game))
 }
