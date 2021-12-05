@@ -17,7 +17,13 @@ type Game struct {
 
 func parseToInts(input string, sep string) []int {
 	var numbers []int
-	for _, num := range strings.Split(input, sep) {
+	var allStrings []string
+	if sep == " " {
+		allStrings = strings.Fields(input)
+	} else {
+		allStrings = strings.Split(input, sep)
+	}
+	for _, num := range allStrings {
 		intNum, _ := strconv.Atoi(num)
 		numbers = append(numbers, intNum)
 	}
@@ -28,14 +34,24 @@ func parseInput(input []string) Game {
 	numbersRow := input[0]
 	numbers := parseToInts(numbersRow, ",")
 
-	var gameRows []string = input[1:]
-	for _, row := gameRows {
-		var boardVals [5][5]int
-		if strings.Trim(row) != "" {
+	var gameRows = input[1:]
+	var boardVals [5][5]int
+	var boardRowVals [5]int
+	var boardRow int
+	var boards []Board
+	for _, row := range gameRows {
+		if strings.Trim(row, " ") != "" {
+			copy(boardRowVals[:], parseToInts(row, " "))
+			boardVals[boardRow] = boardRowVals
+			boardRow++
+			if boardRow == 5 {
+				boards = append(boards, Board{boardVals})
+				boardRow = 0
+			}
 		}
 	}
 
-	return Game{numbers: numbers, boards: []Board{}}
+	return Game{numbers, boards}
 }
 
 func day4P1(game Game) int {
