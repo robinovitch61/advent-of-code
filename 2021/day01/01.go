@@ -1,11 +1,12 @@
-package main
+package day01
 
 import (
+	"aoc/common"
 	"fmt"
 	"strconv"
 )
 
-func day1P1(depths []int) int {
+func p1(depths []int) int {
 	numIncreases := 0
 	for i, _ := range depths {
 		if i > 0 && depths[i] > depths[i-1] {
@@ -23,7 +24,7 @@ func sum(input []int) int {
 	return sum
 }
 
-func day1P2(depths []int, windowSize int) int {
+func p2(depths []int, windowSize int) int {
 	numIncreases := 0
 	for i, _ := range depths {
 		if i >= windowSize && sum(depths[i-windowSize:i]) < sum(depths[i-windowSize+1:i+1]) {
@@ -33,14 +34,14 @@ func day1P2(depths []int, windowSize int) int {
 	return numIncreases
 }
 
-func day1() {
-	printDay(1)
-	depthStrings := readFile("./01_input.txt")
+func Run() {
+	common.PrintDay(1)
+	depthStrings := common.ReadFile("01")
 	var depths = make([]int, len(depthStrings), len(depthStrings))
 	for i, depth := range depthStrings {
 		intDepth, _ := strconv.Atoi(depth)
 		depths[i] = intDepth
 	}
-	fmt.Println(day1P1(depths))
-	fmt.Println(day1P2(depths, 3))
+	fmt.Println(p1(depths))
+	fmt.Println(p2(depths, 3))
 }

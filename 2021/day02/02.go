@@ -1,12 +1,13 @@
-package main
+package day02
 
 import (
+	"aoc/common"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
-func day2P1(directions []string) int {
+func p1(directions []string) int {
 	var horizontal, depth int = 0, 0
 	for _, direction := range directions {
 		split := strings.Split(direction, " ")
@@ -25,7 +26,7 @@ func day2P1(directions []string) int {
 	return horizontal * depth
 }
 
-func day2P2(directions []string) int {
+func p2(directions []string) int {
 	var horizontal, depth, aim int = 0, 0, 0
 	for _, direction := range directions {
 		split := strings.Split(direction, " ")
@@ -45,9 +46,9 @@ func day2P2(directions []string) int {
 	return horizontal * depth
 }
 
-func day2() {
-	printDay(2)
-	directions := readFile("./02_input.txt")
-	fmt.Println(day2P1(directions))
-	fmt.Println(day2P2(directions))
+func Run() {
+	common.PrintDay(2)
+	directions := common.ReadFile("02")
+	fmt.Println(p1(directions))
+	fmt.Println(p2(directions))
 }

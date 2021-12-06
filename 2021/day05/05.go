@@ -1,6 +1,7 @@
-package main
+package day05
 
 import (
+	"aoc/common"
 	"fmt"
 	"strconv"
 	"strings"
@@ -23,7 +24,7 @@ func parsePoint(input string, sep string) Point {
 	return Point{x, y}
 }
 
-func parseInputToLines(input []string) []Line {
+func parseInput(input []string) []Line {
 	var lines []Line
 	for _, row := range input {
 		split := strings.Split(row, " -> ")
@@ -100,26 +101,21 @@ func solve(lines []Line, cond func(Line) bool) int {
 	return moreThanTwo
 }
 
-func cond1(line Line) bool {
-	return (line.start.x == line.end.x) || (line.start.y == line.end.y)
+func p1(lines []Line) int {
+	cond := func(line Line) bool {
+		return (line.start.x == line.end.x) || (line.start.y == line.end.y)
+	}
+	return solve(lines, cond)
 }
 
-func cond2(line Line) bool {
-	return true
+func p2(lines []Line) int {
+	return solve(lines, func(line Line) bool { return true })
 }
 
-func day5P1(lines []Line) int {
-	return solve(lines, cond1)
-}
-
-func day5P2(lines []Line) int {
-	return solve(lines, cond2)
-}
-
-func day5() {
-	printDay(5)
-	input := readFile("./05_input.txt")
-	lines := parseInputToLines(input)
-	fmt.Println(day5P1(lines))
-	fmt.Println(day5P2(lines))
+func Run() {
+	common.PrintDay(5)
+	input := common.ReadFile("05")
+	lines := parseInput(input)
+	fmt.Println(p1(lines))
+	fmt.Println(p2(lines))
 }

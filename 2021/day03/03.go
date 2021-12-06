@@ -1,6 +1,7 @@
-package main
+package day03
 
 import (
+	"aoc/common"
 	"fmt"
 	"strconv"
 )
@@ -23,7 +24,7 @@ func getCounts(diagnostics []string, pos int) Counts {
 	return Counts{zeroCount, oneCount}
 }
 
-func day3P1(diagnostics []string) int {
+func p1(diagnostics []string) int {
 	var numBits = len(diagnostics[0])
 	var gamma, epsilon string = "", ""
 	for pos := 0; pos < numBits; pos++ {
@@ -71,7 +72,7 @@ func eliminate(diagnostics []string, pos int, mostCommon bool) string {
 	}
 }
 
-func day3P2(diagnostics []string) int {
+func p2(diagnostics []string) int {
 	oxygenGenerator := eliminate(diagnostics, 0, true)
 	co2Scrubber := eliminate(diagnostics, 0, false)
 	oxygenGeneratorDec, _ := strconv.ParseInt(oxygenGenerator, 2, 64)
@@ -79,9 +80,9 @@ func day3P2(diagnostics []string) int {
 	return int(oxygenGeneratorDec * co2ScrubberDec)
 }
 
-func day3() {
-	printDay(3)
-	diagnostics := readFile("./03_input.txt")
-	fmt.Println(day3P1(diagnostics))
-	fmt.Println(day3P2(diagnostics))
+func Run() {
+	common.PrintDay(3)
+	diagnostics := common.ReadFile("03")
+	fmt.Println(p1(diagnostics))
+	fmt.Println(p2(diagnostics))
 }

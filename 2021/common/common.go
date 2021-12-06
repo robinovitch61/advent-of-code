@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"bufio"
@@ -8,10 +8,10 @@ import (
 	"strconv"
 )
 
-func readFile(path string) []string {
+func ReadFile(day string) []string {
 	var contents []string
 
-	file, err := os.Open(path)
+	file, err := os.Open(fmt.Sprintf("./day%s/%s_input.txt", day, day))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,7 +28,7 @@ func readFile(path string) []string {
 	return contents
 }
 
-func printDay(day int) {
+func PrintDay(day int) {
 	fmt.Println("---------")
 	fmt.Println("Day " + strconv.Itoa(day))
 }

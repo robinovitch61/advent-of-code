@@ -1,9 +1,17 @@
 package main
 
+import (
+	"aoc/day01"
+	"aoc/day02"
+	"aoc/day03"
+	"aoc/day04"
+	"aoc/day05"
+)
+
 func main() {
-	day1()
-	day2()
-	day3()
-	day4()
-	day5()
+	day01.Run()
+	day02.Run()
+	day03.Run()
+	day04.Run()
+	day05.Run()
 }

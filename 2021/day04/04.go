@@ -1,6 +1,7 @@
-package main
+package day04
 
 import (
+	"aoc/common"
 	"fmt"
 	"strconv"
 	"strings"
@@ -30,7 +31,7 @@ func parseToInts(input string, sep string) []int {
 	return numbers
 }
 
-func parseInputToGame(input []string) Game {
+func parseInput(input []string) Game {
 	numbersRow := input[0]
 	numbers := parseToInts(numbersRow, ",")
 
@@ -88,7 +89,7 @@ func calcScore(board Board, drawn map[int]bool, lastDrawn int) int {
 	return sum * lastDrawn
 }
 
-func day4P1(game Game) int {
+func p1(game Game) int {
 	drawn := make(map[int]bool)
 	for _, num := range game.numbers {
 		drawn[num] = true
@@ -101,7 +102,7 @@ func day4P1(game Game) int {
 	return -1
 }
 
-func day4P2(game Game) int {
+func p2(game Game) int {
 	wonBoards := make(map[Board]bool)
 	drawn := make(map[int]bool)
 	for _, num := range game.numbers {
@@ -120,10 +121,10 @@ func day4P2(game Game) int {
 	return -1
 }
 
-func day4() {
-	printDay(4)
-	input := readFile("./04_input.txt")
-	game := parseInputToGame(input)
-	fmt.Println(day4P1(game))
-	fmt.Println(day4P2(game))
+func Run() {
+	common.PrintDay(4)
+	input := common.ReadFile("04")
+	game := parseInput(input)
+	fmt.Println(p1(game))
+	fmt.Println(p2(game))
 }
