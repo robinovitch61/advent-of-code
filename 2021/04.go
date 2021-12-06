@@ -30,7 +30,7 @@ func parseToInts(input string, sep string) []int {
 	return numbers
 }
 
-func parseInput(input []string) Game {
+func parseInputToGame(input []string) Game {
 	numbersRow := input[0]
 	numbers := parseToInts(numbersRow, ",")
 
@@ -123,7 +123,7 @@ func day4P2(game Game) int {
 func day4() {
 	printDay(4)
 	input := readFile("./04_input.txt")
-	game := parseInput(input)
+	game := parseInputToGame(input)
 	fmt.Println(day4P1(game))
 	fmt.Println(day4P2(game))
 }
