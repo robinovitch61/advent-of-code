@@ -40,23 +40,11 @@ func calcFuel(start []int, moveTo int) int {
 	return fuel
 }
 
-func getGeoMap() map[int]int {
-	size := 1500
-	var geoMap = make(map[int]int, size)
-	count := 0
-	geoMap[0] = 0
-	for i := 1; i < size; i++ {
-		geoMap[i] = geoMap[i-1] + count
-		count++
-	}
-	return geoMap
-}
-
 func calcFuelGeo(start []int, moveTo int) int {
 	fuel := 0
-	geoMap := getGeoMap()
 	for _, pos := range start {
-		fuel += geoMap[int(math.Abs(float64(moveTo-pos)))]
+		n := math.Abs(float64(moveTo - pos))
+		fuel += int(n * (n + 1) / 2)
 	}
 	return fuel
 }
