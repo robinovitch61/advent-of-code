@@ -3,16 +3,20 @@ package day08
 import (
 	"aoc/common"
 	"fmt"
-	"log"
+	"math"
+	"sort"
 	"strings"
-
-	"github.com/alex-ant/gomath/gaussian-elimination"
-	"github.com/alex-ant/gomath/rational"
 )
 
 type Entry struct {
-	signals [10]string
+	signals [10]string // items are sorted by chars and array in order of increasing length
 	outputs [4]string
+}
+
+func sortString(w string) string {
+	s := strings.Split(w, "")
+	sort.Strings(s)
+	return strings.Join(s, "")
 }
 
 func parseInput(input []string) []Entry {
@@ -22,8 +26,16 @@ func parseInput(input []string) []Entry {
 		var signals [10]string
 		var outputs [4]string
 		first, second := split[0], split[1]
-		copy(signals[:], strings.Split(first, " "))
-		copy(outputs[:], strings.Split(second, " "))
+		signalsSlice := strings.Split(first, " ")
+		outputsSlice := strings.Split(second, " ")
+		for idx, signal := range signalsSlice {
+			signalsSlice[idx] = sortString(signal)
+		}
+		sort.Slice(signalsSlice, func(i, j int) bool {
+			return len(signalsSlice[i]) < len(signalsSlice[j])
+		})
+		copy(signals[:], signalsSlice)
+		copy(outputs[:], outputsSlice)
 		newEntry := Entry{signals, outputs}
 		entries = append(entries, newEntry)
 	}
@@ -45,52 +57,173 @@ func p1(entries []Entry) int {
 	return uniqueDigits
 }
 
-func nr(i int64) rational.Rational {
-	return rational.New(i, 1)
+func segmentsToNum(segments string) int {
+	switch segments {
+	case "abcefg":
+		return 0
+	case "cf":
+		return 1
+	case "acdeg":
+		return 2
+	case "acdfg":
+		return 3
+	case "bcdf":
+		return 4
+	case "abdfg":
+		return 5
+	case "abdefg":
+		return 6
+	case "acf":
+		return 7
+	case "abcdefg":
+		return 8
+	case "abcdfg":
+		return 9
+	}
+	fmt.Println(segments)
+	panic("wtf")
 }
 
-func generateEquation(combo string) []rational.Rational {
+func possibleCombinationsOfReal() [10]string {
+	zero := "abcefg"
+	one := "cf"
+	two := "acdeg"
+	three := "acdfg"
+	four := "bcdf"
+	five := "abdfg"
+	six := "abdefg"
+	seven := "acf"
+	eight := "abcdefg"
+	nine := "abcdfg"
+	return [10]string{zero, one, two, three, four, five, six, seven, eight, nine}
+}
+
+func combinationsOfSameLength(signal string) []string {
+	var combos []string
+	for _, combo := range possibleCombinationsOfReal() {
+		if len(signal) == len(combo) {
+			combos = append(combos, combo)
+		}
+	}
+	return combos
+}
+
+func segmentOptions() []string {
+	return []string{"a", "b", "c", "d", "e", "f", "g"}
+}
+
+func possibleCrossedToReal() map[string][]string {
+	possible := make(map[string][]string)
+	for _, segment := range segmentOptions() {
+		possible[segment] = segmentOptions()
+	}
+	return possible
+}
+
+func atLeastOneContains(options []string, substr string) bool {
+	for _, option := range options {
+		if strings.Contains(option, substr) {
+			return true
+		}
+	}
+	return false
+}
+
+func commonChars(options []string) []string {
+	charCount := make(map[string]int, 26)
+	for _, option := range options {
+		for i := 0; i < len(option); i++ {
+			charCount[string(option[i])]++
+		}
+	}
+
+	var result []string
+	for k, v := range charCount {
+		if v == len(options) {
+			result = append(result, k)
+		}
+	}
+	return result
+}
+
+func updateCrossedToReal(crossedToReal map[string][]string, sortedSignal string, possibleCombos []string) {
+	// LiNeAr AlGebRa
+	for k, v := range crossedToReal {
+		if len(v) == 1 {
+			eliminateFromOthers := v[0]
+			for _, segmentChar := range segmentOptions() {
+				if k != segmentChar {
+					// can eliminate from all other options
+					var eliminatedRealOptions []string
+					for _, oldOption := range crossedToReal[segmentChar] {
+						if oldOption != eliminateFromOthers {
+							eliminatedRealOptions = append(eliminatedRealOptions, oldOption)
+						}
+					}
+					crossedToReal[segmentChar] = eliminatedRealOptions
+				}
+			}
+		}
+	}
+
+	for i := 0; i < len(sortedSignal); i++ {
+		signalChar := string(sortedSignal[i])
+
+		// pair down the existing options based on the possible combos
+		var newRealOptions []string
+		for _, oldOption := range crossedToReal[signalChar] {
+			if atLeastOneContains(possibleCombos, oldOption) {
+				newRealOptions = append(newRealOptions, oldOption)
+			}
+		}
+		crossedToReal[signalChar] = newRealOptions
+	}
+
+	commonChars := commonChars(possibleCombos)
+	for _, segmentChar := range segmentOptions() {
+		if !strings.Contains(sortedSignal, segmentChar) {
+			var eliminatedRealOptions []string
+			for _, oldOption := range crossedToReal[segmentChar] {
+				if !strings.Contains(strings.Join(commonChars, ""), oldOption) {
+					eliminatedRealOptions = append(eliminatedRealOptions, oldOption)
+				}
+			}
+			crossedToReal[segmentChar] = eliminatedRealOptions
+		}
+	}
 
 }
 
-func solver(entry Entry) map[int][int] {
-	equations := make([][]rational.Rational, 10)
-	equations[0] = []rational.Rational{nr(1), nr(2), nr(1), nr(1), nr(12)}
-	equations[1] = []rational.Rational{nr(3), nr(1), nr(2), nr(2), nr(19)}
-	equations[2] = []rational.Rational{nr(2), nr(5), nr(3), nr(1), nr(25)}
-	equations[3] = []rational.Rational{nr(1), nr(3), nr(3), nr(2), nr(24)}
-
-	res, gausErr := gaussian.SolveGaussian(equations, false)
-	if gausErr != nil {
-		log.Fatal(gausErr)
+func solveEntry(entry Entry) map[string]string {
+	crossedToReal := possibleCrossedToReal()
+	for _, signal := range entry.signals {
+		sortedSignal := sortString(signal)
+		possibleCombos := combinationsOfSameLength(sortedSignal)
+		updateCrossedToReal(crossedToReal, sortedSignal, possibleCombos)
 	}
-
-	for _, v := range res {
-		log.Println(v)
+	result := make(map[string]string)
+	for k, v := range crossedToReal {
+		result[k] = v[0]
 	}
-	return 1
+	return result
 }
 
 func p2(entries []Entry) int {
-	nr := func(i int64) rational.Rational {
-		return rational.New(i, 1)
-	}
+	answer := 0
+	for _, entry := range entries {
+		solved := solveEntry(entry)
+		fmt.Println(solved)
 
-	equations := make([][]rational.Rational, 4)
-	equations[0] = []rational.Rational{nr(1), nr(2), nr(1), nr(1), nr(12)}
-	equations[1] = []rational.Rational{nr(3), nr(1), nr(2), nr(2), nr(19)}
-	equations[2] = []rational.Rational{nr(2), nr(5), nr(3), nr(1), nr(25)}
-	equations[3] = []rational.Rational{nr(1), nr(3), nr(3), nr(2), nr(24)}
-
-	res, gausErr := gaussian.SolveGaussian(equations, false)
-	if gausErr != nil {
-		log.Fatal(gausErr)
+		for idx, output := range entry.outputs {
+			result := ""
+			for i := 0; i < len(output); i++ {
+				result += solved[string(output[i])]
+			}
+			num := segmentsToNum(sortString(result)) * int(math.Pow(10, float64(4-idx-1)))
+			answer += num
+		}
 	}
-
-	for _, v := range res {
-		log.Println(v)
-	}
-	return 1
+	return answer
 }
 
 func Run() {
