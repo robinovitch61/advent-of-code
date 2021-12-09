@@ -9,6 +9,7 @@ import (
 	"aoc/day06"
 	"aoc/day07"
 	"aoc/day08"
+	"aoc/day09"
 )
 
 func main() {
@@ -20,4 +21,5 @@ func main() {
 	day06.Run()
 	day07.Run()
 	day08.Run()
+	day09.Run()
 }
