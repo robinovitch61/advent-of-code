@@ -84,51 +84,6 @@ func segmentsToNum(segments string) int {
 	panic("wtf")
 }
 
-func possibleCombinationsOfReal() [10]string {
-	zero := "abcefg"
-	one := "cf"
-	two := "acdeg"
-	three := "acdfg"
-	four := "bcdf"
-	five := "abdfg"
-	six := "abdefg"
-	seven := "acf"
-	eight := "abcdefg"
-	nine := "abcdfg"
-	return [10]string{zero, one, two, three, four, five, six, seven, eight, nine}
-}
-
-func combinationsOfSameLength(signal string) []string {
-	var combos []string
-	for _, combo := range possibleCombinationsOfReal() {
-		if len(signal) == len(combo) {
-			combos = append(combos, combo)
-		}
-	}
-	return combos
-}
-
-func segmentOptions() []string {
-	return []string{"a", "b", "c", "d", "e", "f", "g"}
-}
-
-func possibleCrossedToReal() map[string][]string {
-	possible := make(map[string][]string)
-	for _, segment := range segmentOptions() {
-		possible[segment] = segmentOptions()
-	}
-	return possible
-}
-
-func atLeastOneContains(options []string, substr string) bool {
-	for _, option := range options {
-		if strings.Contains(option, substr) {
-			return true
-		}
-	}
-	return false
-}
-
 func commonChars(options []string) []string {
 	charCount := make(map[string]int, 26)
 	for _, option := range options {
@@ -146,73 +101,85 @@ func commonChars(options []string) []string {
 	return result
 }
 
-func updateCrossedToReal(crossedToReal map[string][]string, sortedSignal string, possibleCombos []string) {
-	// LiNeAr AlGebRa
-	for k, v := range crossedToReal {
-		if len(v) == 1 {
-			eliminateFromOthers := v[0]
-			for _, segmentChar := range segmentOptions() {
-				if k != segmentChar {
-					// can eliminate from all other options
-					var eliminatedRealOptions []string
-					for _, oldOption := range crossedToReal[segmentChar] {
-						if oldOption != eliminateFromOthers {
-							eliminatedRealOptions = append(eliminatedRealOptions, oldOption)
-						}
-					}
-					crossedToReal[segmentChar] = eliminatedRealOptions
-				}
-			}
-		}
-	}
-
-	for i := 0; i < len(sortedSignal); i++ {
-		signalChar := string(sortedSignal[i])
-
-		// pair down the existing options based on the possible combos
-		var newRealOptions []string
-		for _, oldOption := range crossedToReal[signalChar] {
-			if atLeastOneContains(possibleCombos, oldOption) {
-				newRealOptions = append(newRealOptions, oldOption)
-			}
-		}
-		crossedToReal[signalChar] = newRealOptions
-	}
-
-	commonChars := commonChars(possibleCombos)
-	for _, segmentChar := range segmentOptions() {
-		if !strings.Contains(sortedSignal, segmentChar) {
-			var eliminatedRealOptions []string
-			for _, oldOption := range crossedToReal[segmentChar] {
-				if !strings.Contains(strings.Join(commonChars, ""), oldOption) {
-					eliminatedRealOptions = append(eliminatedRealOptions, oldOption)
-				}
-			}
-			crossedToReal[segmentChar] = eliminatedRealOptions
-		}
-	}
-
-}
-
 func solveEntry(entry Entry) map[string]string {
-	crossedToReal := possibleCrossedToReal()
-	for _, signal := range entry.signals {
-		sortedSignal := sortString(signal)
-		possibleCombos := combinationsOfSameLength(sortedSignal)
-		updateCrossedToReal(crossedToReal, sortedSignal, possibleCombos)
+	crossedToReal := make(map[string]string)
+	signals := entry.signals
+
+	// 1 is the only display with 2 segments, C and F
+	cOrF := strings.Split(signals[0], "")
+
+	// 7 is the only display with 3 segments, A, C, and F, so we can determine A
+	determineA := strings.Split(signals[1], "")
+	for _, char := range determineA {
+		if !strings.Contains(strings.Join(cOrF, ""), char) {
+			crossedToReal[char] = "a"
+		}
 	}
-	result := make(map[string]string)
-	for k, v := range crossedToReal {
-		result[k] = v[0]
+
+	// 4 is the only display with 4 segments, B, C, D, and F
+	var bOrD []string
+	for _, char := range strings.Split(signals[2], "") {
+		if !strings.Contains(strings.Join(cOrF, ""), char) {
+			bOrD = append(bOrD, char)
+		}
 	}
-	return result
+
+	// there are three displays with 5 segments: 2, 3, and 5
+	// the segments they share are A, D, and G
+	// A is already determined and bOrD has overlap with another, which is D
+	var middle string // used later
+	fives := signals[3:6]
+	commonInFives := commonChars(fives)
+	for _, char := range commonInFives {
+		if _, exists := crossedToReal[char]; !exists {
+			if strings.Contains(strings.Join(bOrD, ""), char) {
+				crossedToReal[char] = "d"
+				middle = char
+			} else {
+				crossedToReal[char] = "g"
+			}
+		}
+	}
+
+	// we determined D above, so we can infer B
+	for _, char := range bOrD {
+		if _, exists := crossedToReal[char]; !exists {
+			crossedToReal[char] = "b"
+		}
+	}
+
+	// there are three displays with 6 segments: 0, 6, and 9
+	// only 0 will have no D (middle) segment
+	// 6 and 9 will have middle segments, and both have one of cOrF, which will be F
+	sixes := signals[6:9]
+	var sixAndNine []string
+	for _, sixSegments := range sixes {
+		if strings.Contains(sixSegments, middle) {
+			sixAndNine = append(sixAndNine, sixSegments)
+		}
+	}
+	for _, char := range cOrF {
+		if strings.Contains(sixAndNine[0], char) && strings.Contains(sixAndNine[1], char) {
+			crossedToReal[char] = "f"
+		} else {
+			crossedToReal[char] = "c"
+		}
+	}
+
+	// we now have 6 of 7, so last one missing is E
+	for _, char := range []string{"a", "b", "c", "d", "e", "f", "g"} {
+		if _, exists := crossedToReal[char]; !exists {
+			crossedToReal[char] = "e"
+		}
+	}
+
+	return crossedToReal
 }
 
 func p2(entries []Entry) int {
 	answer := 0
 	for _, entry := range entries {
 		solved := solveEntry(entry)
-		fmt.Println(solved)
 
 		for idx, output := range entry.outputs {
 			result := ""
