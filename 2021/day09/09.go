@@ -53,28 +53,6 @@ func p1(heights [][]int) int {
 	return riskLevelSum
 }
 
-func helper(heights [][]int, i int, j int, prevSize int) int {
-	start := heights[i][j]
-	if start == 9 {
-		panic("wtf")
-	}
-	heights[i][j] = 9
-	basinSize := 1
-	if i > 0 && heights[i-1][j] != 9 {
-		basinSize += helper(heights, i-1, j, prevSize+1)
-	}
-	if j > 0 && heights[i][j-1] != 9 {
-		basinSize += helper(heights, i, j-1, prevSize+1)
-	}
-	if i < len(heights)-1 && heights[i+1][j] != 9 {
-		basinSize += helper(heights, i+1, j, prevSize+1)
-	}
-	if j < len(heights[0])-1 && heights[i][j+1] != 9 {
-		basinSize += helper(heights, i, j+1, prevSize+1)
-	}
-	return basinSize
-}
-
 func getBasinSize(heights [][]int, i int, j int) int {
 	if heights[i][j] == 9 {
 		panic("wtf")
