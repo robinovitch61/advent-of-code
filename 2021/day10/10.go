@@ -3,6 +3,8 @@ package day10
 import (
 	"aoc/common"
 	"fmt"
+	"math"
+	"sort"
 	"strings"
 )
 
@@ -14,7 +16,7 @@ func parseInput(input []string) [][]string {
 	return lines
 }
 
-func toOpenChar(char string) string {
+func toOppositeChar(char string) string {
 	switch char {
 	case ")":
 		return "("
@@ -24,60 +26,121 @@ func toOpenChar(char string) string {
 		return "{"
 	case "]":
 		return "["
+	case "(":
+		return ")"
+	case "<":
+		return ">"
+	case "{":
+		return "}"
+	case "[":
+		return "]"
 	}
 	panic("wtf")
 }
 
-func getClose(line []string, startIdx int) (int, string) {
-	for fromStartIdx, nextChar := range line[startIdx+1:] {
-		if strings.Contains("(<{[", nextChar) {
-			return getClose(line, startIdx+fromStartIdx+1)
-		} else {
-			return startIdx + fromStartIdx + 1, nextChar
-		}
-	}
-	return 0, ""
+type Stack []string
+
+func (s *Stack) Push(str string) {
+	*s = append(*s, str)
 }
 
-func validateLine(line []string) (string, bool) {
-	startIdx := 0
-	for startIdx < len(line)-1 {
-		openChar := line[startIdx]
-		closeIdx, closeChar := getClose(line, startIdx)
-		if toOpenChar(closeChar) != openChar {
-			return closeChar, false
-		}
-		startIdx = closeIdx + 1
+func (s *Stack) Pop() (string, bool) {
+	if len(*s) == 0 {
+		return "", false
+	} else {
+		idx := len(*s) - 1
+		last := (*s)[idx]
+		*s = (*s)[:idx]
+		return last, true
 	}
-	return "", true
+}
+
+func (s *Stack) Show() {
+	fmt.Println(*s)
+}
+
+func validateLine(line []string) (string, bool, Stack) {
+	startIdx := 0
+	var stack Stack
+	for startIdx < len(line) {
+		val := line[startIdx]
+		if strings.Contains("([<{", val) {
+			stack.Push(val)
+		} else {
+			open, hasVal := stack.Pop()
+			if !hasVal || toOppositeChar(val) != open {
+				return val, false, stack
+			}
+		}
+		startIdx++
+	}
+	return "", true, stack
+}
+
+var scoreMapCorrupted = map[string]int{
+	")": 3,
+	"]": 57,
+	"}": 1197,
+	">": 25137,
+}
+
+var scoreMapIncomplete = map[string]int{
+	")": 1,
+	"]": 2,
+	"}": 3,
+	">": 4,
 }
 
 func p1(lines [][]string) int {
 	score := 0
-	scoreMap := map[string]int{
-		")": 3,
-		"]": 57,
-		"}": 1197,
-		">": 25137,
-	}
 	for _, line := range lines {
-		firstIllegalChar, isValid := validateLine(line)
+		firstIllegalChar, isValid, _ := validateLine(line)
 		if !isValid {
-			score += scoreMap[firstIllegalChar]
+			score += scoreMapCorrupted[firstIllegalChar]
 		}
 	}
 	return score
 }
 
+func reverseStack(s Stack) []string {
+	var reversed []string
+	for {
+		item, hasItem := s.Pop()
+		if !hasItem {
+			break
+		}
+		reversed = append(reversed, toOppositeChar(item))
+	}
+	return reversed
+}
+
+func getIncompleteScore(rest []string) int {
+	score := 0
+	for _, closed := range rest {
+		score *= 5
+		score += scoreMapIncomplete[closed]
+	}
+	return score
+}
+
 func p2(lines [][]string) int {
-	return -1
+	var allScores []int
+	for _, line := range lines {
+		_, isValid, stack := validateLine(line)
+		if isValid {
+			rest := reverseStack(stack)
+			score := getIncompleteScore(rest)
+			allScores = append(allScores, score)
+		}
+	}
+	sort.Ints(allScores)
+	return allScores[int(math.Floor(float64((len(allScores)-1)/2)))]
 }
 
 func Run() {
-	common.PrintDay(9)
-	//input := common.ReadFile("10")
-	//lines := parseInput(input)
-	lines := [][]string{strings.Split("{([(<{}[<>[]}>{[]{[(<()>", "")}
+	common.PrintDay(10)
+	input := common.ReadFile("10")
+	lines := parseInput(input)
 	fmt.Println(p1(lines))
 	fmt.Println(p2(lines))
 }
