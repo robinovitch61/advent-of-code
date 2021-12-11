@@ -90,7 +90,6 @@ func step(energyLevels [][]int) int {
 				val := energyLevels[i][j]
 				if val > 9 && !inFlashed(flashedThisStep, i, j) {
 					flashes++
-					flashedThisStep = append(flashedThisStep, [2]int{i, j})
 					flashedThisRound = append(flashedThisRound, [2]int{i, j})
 				}
 			}
@@ -98,6 +97,7 @@ func step(energyLevels [][]int) int {
 		if len(flashedThisRound) == 0 {
 			break
 		}
+		flashedThisStep = append(flashedThisStep, flashedThisRound...)
 		incrementAdjacentToFlashedThisRound(energyLevels, flashedThisRound)
 	}
 	// finally, set all flashed this step to zero
