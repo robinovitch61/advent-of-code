@@ -90,6 +90,7 @@ func calcScore(board Board, drawn map[int]bool, lastDrawn int) int {
 }
 
 func p1(game Game) int {
+	defer common.Time()()
 	drawn := make(map[int]bool)
 	for _, num := range game.numbers {
 		drawn[num] = true
@@ -103,6 +104,7 @@ func p1(game Game) int {
 }
 
 func p2(game Game) int {
+	defer common.Time()()
 	wonBoards := make(map[Board]bool)
 	drawn := make(map[int]bool)
 	for _, num := range game.numbers {

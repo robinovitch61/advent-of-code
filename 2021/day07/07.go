@@ -62,10 +62,12 @@ func solve(start []int, calcFuel func([]int, int) int) int {
 }
 
 func p1(start []int) int {
+	defer common.Time()()
 	return solve(start, calcFuel)
 }
 
 func p2(start []int) int {
+	defer common.Time()()
 	return solve(start, calcFuelGeo)
 }
 

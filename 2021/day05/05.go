@@ -102,6 +102,7 @@ func solve(lines []Line, cond func(Line) bool) int {
 }
 
 func p1(lines []Line) int {
+	defer common.Time()()
 	cond := func(line Line) bool {
 		return (line.start.x == line.end.x) || (line.start.y == line.end.y)
 	}
@@ -109,6 +110,7 @@ func p1(lines []Line) int {
 }
 
 func p2(lines []Line) int {
+	defer common.Time()()
 	return solve(lines, func(line Line) bool { return true })
 }
 

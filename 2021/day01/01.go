@@ -7,6 +7,7 @@ import (
 )
 
 func p1(depths []int) int {
+	defer common.Time()()
 	numIncreases := 0
 	for i, _ := range depths {
 		if i > 0 && depths[i] > depths[i-1] {
@@ -25,6 +26,7 @@ func sum(input []int) int {
 }
 
 func p2(depths []int, windowSize int) int {
+	defer common.Time()()
 	numIncreases := 0
 	for i, _ := range depths {
 		if i >= windowSize && sum(depths[i-windowSize:i]) < sum(depths[i-windowSize+1:i+1]) {

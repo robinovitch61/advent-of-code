@@ -8,6 +8,7 @@ import (
 )
 
 func p1(directions []string) int {
+	defer common.Time()()
 	var horizontal, depth int = 0, 0
 	for _, direction := range directions {
 		split := strings.Split(direction, " ")
@@ -27,6 +28,7 @@ func p1(directions []string) int {
 }
 
 func p2(directions []string) int {
+	defer common.Time()()
 	var horizontal, depth, aim int = 0, 0, 0
 	for _, direction := range directions {
 		split := strings.Split(direction, " ")

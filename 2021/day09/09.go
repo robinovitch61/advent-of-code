@@ -37,6 +37,7 @@ func getIsLowPoint(heights [][]int, i int, j int) (int, bool) {
 }
 
 func p1(heights [][]int) int {
+	defer common.Time()()
 	var lowPoints []int
 	for i := 0; i < len(heights); i++ {
 		for j := 0; j < len(heights[0]); j++ {
@@ -75,6 +76,7 @@ func getBasinSize(heights [][]int, i int, j int) int {
 }
 
 func p2(heights [][]int) int {
+	defer common.Time()()
 	var basinSizes []int
 	for i := 0; i < len(heights); i++ {
 		for j := 0; j < len(heights[0]); j++ {

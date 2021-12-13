@@ -44,10 +44,12 @@ func solveForDays(start []int, days int) int {
 }
 
 func p1(start []int) int {
+	defer common.Time()()
 	return solveForDays(start, 80)
 }
 
 func p2(start []int) int {
+	defer common.Time()()
 	return solveForDays(start, 256)
 }
 

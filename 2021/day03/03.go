@@ -25,6 +25,7 @@ func getCounts(diagnostics []string, pos int) Counts {
 }
 
 func p1(diagnostics []string) int {
+	defer common.Time()()
 	var numBits = len(diagnostics[0])
 	var gamma, epsilon string = "", ""
 	for pos := 0; pos < numBits; pos++ {
@@ -73,6 +74,7 @@ func eliminate(diagnostics []string, pos int, mostCommon bool) string {
 }
 
 func p2(diagnostics []string) int {
+	defer common.Time()()
 	oxygenGenerator := eliminate(diagnostics, 0, true)
 	co2Scrubber := eliminate(diagnostics, 0, false)
 	oxygenGeneratorDec, _ := strconv.ParseInt(oxygenGenerator, 2, 64)

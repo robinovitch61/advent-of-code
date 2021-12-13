@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 func ReadFile(day string) []string {
@@ -31,4 +32,11 @@ func ReadFile(day string) []string {
 func PrintDay(day int) {
 	fmt.Println("---------")
 	fmt.Println("Day " + strconv.Itoa(day))
+}
+
+func Time() func() {
+	start := time.Now()
+	return func() {
+		log.Printf("time %s\n", time.Since(start))
+	}
 }

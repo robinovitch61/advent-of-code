@@ -108,6 +108,7 @@ func step(energyLevels [][]int) int {
 }
 
 func p1(input []string) int {
+	defer common.Time()()
 	energyLevels := parseInput(input)
 	totalFlashes := 0
 	numSteps := 100
@@ -129,6 +130,7 @@ func synced(energyLevels [][]int) bool {
 }
 
 func p2(input []string) int {
+	defer common.Time()()
 	energyLevels := parseInput(input)
 	s := 0
 	for {

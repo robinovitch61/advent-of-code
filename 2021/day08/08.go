@@ -43,6 +43,7 @@ func parseInput(input []string) []Entry {
 }
 
 func p1(entries []Entry) int {
+	defer common.Time()()
 	uniqueDigits := 0
 	uniqueCounts := [4]int{2, 4, 3, 7}
 	for _, entry := range entries {
@@ -177,6 +178,7 @@ func solveEntry(entry Entry) map[string]string {
 }
 
 func p2(entries []Entry) int {
+	defer common.Time()()
 	answer := 0
 	for _, entry := range entries {
 		solved := solveEntry(entry)

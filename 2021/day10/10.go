@@ -92,6 +92,7 @@ var scoreMapIncomplete = map[string]int{
 }
 
 func p1(lines [][]string) int {
+	defer common.Time()()
 	score := 0
 	for _, line := range lines {
 		firstIllegalChar, isValid, _ := validateLine(line)
@@ -124,6 +125,7 @@ func getIncompleteScore(rest []string) int {
 }
 
 func p2(lines [][]string) int {
+	defer common.Time()()
 	var allScores []int
 	for _, line := range lines {
 		_, isValid, stack := validateLine(line)
