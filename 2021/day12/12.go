@@ -53,10 +53,10 @@ func hasDuplicate(smallVisited []string) bool {
 	return false
 }
 
-func countPaths(pathMap PathMap, current string, smallVisited []string, canVisitNext func([]string, string) bool) int {
-	var pathCount int
+func getPaths(pathMap PathMap, current string, smallVisited []string, path []string, canVisitNext func([]string, string) bool) [][]string {
+	var paths [][]string
 	if current == "end" {
-		return 1
+		return [][]string{append(path, current)}
 	}
 	for _, next := range pathMap[current] {
 		if !isLower(next) || next != "start" && canVisitNext(smallVisited, next) {
@@ -66,10 +66,10 @@ func countPaths(pathMap PathMap, current string, smallVisited []string, canVisit
 			} else {
 				newSmallVisited = smallVisited
 			}
-			pathCount += countPaths(pathMap, next, newSmallVisited, canVisitNext)
+			paths = append(paths, getPaths(pathMap, next, newSmallVisited, append(path[:len(path):len(path)], current), canVisitNext)...)
 		}
 	}
-	return pathCount
+	return paths
 }
 
 func p1(pathMap PathMap) int {
@@ -77,8 +77,8 @@ func p1(pathMap PathMap) int {
 	canVisitNext := func(smallVisited []string, next string) bool {
 		return !containsString(smallVisited, next)
 	}
-	pathCount := countPaths(pathMap, "start", []string{}, canVisitNext)
-	return pathCount
+	paths := getPaths(pathMap, "start", []string{}, []string{}, canVisitNext)
+	return len(paths)
 }
 
 func p2(pathMap PathMap) int {
@@ -86,8 +86,8 @@ func p2(pathMap PathMap) int {
 	canVisitNext := func(smallVisited []string, next string) bool {
 		return !containsString(smallVisited, next) || !hasDuplicate(smallVisited)
 	}
-	pathCount := countPaths(pathMap, "start", []string{}, canVisitNext)
-	return pathCount
+	paths := getPaths(pathMap, "start", []string{}, []string{}, canVisitNext)
+	return len(paths)
 }
 
 func Run() {
