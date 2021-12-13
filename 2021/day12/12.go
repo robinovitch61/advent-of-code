@@ -72,22 +72,24 @@ func getPaths(pathMap PathMap, current string, smallVisited []string, path []str
 	return paths
 }
 
-func p1(pathMap PathMap) int {
+func solve(pathMap PathMap, canVisitNext func([]string, string) bool) int {
 	defer common.Time()()
-	canVisitNext := func(smallVisited []string, next string) bool {
-		return !containsString(smallVisited, next)
-	}
 	paths := getPaths(pathMap, "start", []string{}, []string{}, canVisitNext)
 	return len(paths)
 }
 
+func p1(pathMap PathMap) int {
+	canVisitNext := func(smallVisited []string, next string) bool {
+		return !containsString(smallVisited, next)
+	}
+	return solve(pathMap, canVisitNext)
+}
+
 func p2(pathMap PathMap) int {
-	defer common.Time()()
 	canVisitNext := func(smallVisited []string, next string) bool {
 		return !containsString(smallVisited, next) || !hasDuplicate(smallVisited)
 	}
-	paths := getPaths(pathMap, "start", []string{}, []string{}, canVisitNext)
-	return len(paths)
+	return solve(pathMap, canVisitNext)
 }
 
 func Run() {
