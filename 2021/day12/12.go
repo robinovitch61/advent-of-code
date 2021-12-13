@@ -27,14 +27,10 @@ func parseInput(input []string) PathMap {
 	return pathMap
 }
 
-func containsStringNTimes(strs []string, str string, times int) bool {
-	count := 0
+func containsString(strs []string, str string) bool {
 	for _, item := range strs {
 		if str == item {
-			count++
-			if count >= times {
-				return true
-			}
+			return true
 		}
 	}
 	return false
@@ -44,7 +40,7 @@ func isLower(str string) bool {
 	return strings.ToUpper(str) != str
 }
 
-func hasNonUniqueValue(smallVisited []string) bool {
+func hasDuplicate(smallVisited []string) bool {
 	countMap := make(map[string]int)
 	for _, v := range smallVisited {
 		_, exists := countMap[v]
@@ -57,46 +53,41 @@ func hasNonUniqueValue(smallVisited []string) bool {
 	return false
 }
 
-func findPaths(pathMap PathMap, current string, smallVisited []string, path []string, canVisitNext func([]string, string) bool) [][]string {
-	var pathsTraversed [][]string
+func countPaths(pathMap PathMap, current string, smallVisited []string, canVisitNext func([]string, string) bool) int {
+	var pathCount int
 	if current == "end" {
-		return [][]string{append(path, current)}
+		return 1
 	}
 	for _, next := range pathMap[current] {
-		if next != "start" && canVisitNext(smallVisited, next) {
+		if !isLower(next) || next != "start" && canVisitNext(smallVisited, next) {
 			var newSmallVisited []string
 			if isLower(next) {
 				newSmallVisited = append(smallVisited, next)
 			} else {
 				newSmallVisited = smallVisited
 			}
-			pathsTraversed = append(pathsTraversed, findPaths(pathMap, next, newSmallVisited, append(path, current), canVisitNext)...)
+			pathCount += countPaths(pathMap, next, newSmallVisited, canVisitNext)
 		}
 	}
-	return pathsTraversed
+	return pathCount
 }
 
 func p1(pathMap PathMap) int {
+	defer common.Time()()
 	canVisitNext := func(smallVisited []string, next string) bool {
-		return !containsStringNTimes(smallVisited, next, 1)
+		return !containsString(smallVisited, next)
 	}
-	paths := findPaths(pathMap, "start", []string{}, []string{}, canVisitNext)
-	return len(paths)
+	pathCount := countPaths(pathMap, "start", []string{}, canVisitNext)
+	return pathCount
 }
 
 func p2(pathMap PathMap) int {
+	defer common.Time()()
 	canVisitNext := func(smallVisited []string, next string) bool {
-		if !isLower(next) {
-			return true
-		}
-		if next == "end" {
-			return true
-		}
-		return !containsStringNTimes(smallVisited, next, 1) || !hasNonUniqueValue(smallVisited)
+		return !containsString(smallVisited, next) || !hasDuplicate(smallVisited)
 	}
-
-	paths := findPaths(pathMap, "start", []string{}, []string{}, canVisitNext)
-	return len(paths)
+	pathCount := countPaths(pathMap, "start", []string{}, canVisitNext)
+	return pathCount
 }
 
 func Run() {
@@ -104,5 +95,5 @@ func Run() {
 	input := common.ReadFile("12")
 	pathMap := parseInput(input)
 	fmt.Println(p1(pathMap))
-	//fmt.Println(p2(pathMap)) // answer is right here but paths are wrong...go slices arg
+	fmt.Println(p2(pathMap))
 }
