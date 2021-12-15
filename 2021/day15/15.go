@@ -8,34 +8,36 @@ import (
 	"strings"
 )
 
-type PuzzleInput map[common.Point]int
+type Point [2]int
+
+type PuzzleInput map[Point]int
 
 func parseInput(input []string) PuzzleInput {
-	posToRisk := make(map[common.Point]int)
+	posToRisk := make(map[Point]int)
 	for i, row := range input {
 		for j, riskStr := range strings.Split(row, "") {
 			risk, _ := strconv.Atoi(riskStr)
-			posToRisk[common.Point{i, j}] = risk
+			posToRisk[Point{i, j}] = risk
 		}
 	}
 	return posToRisk
 }
 
-func getUnvisitedNeighbors(current common.Point, visited map[common.Point]bool, sideLength int) []common.Point {
-	var unvisited []common.Point
-	up := common.Point{current[0] - 1, current[1]}
+func getUnvisitedNeighbors(current Point, visited map[Point]bool, sideLength int) []Point {
+	var unvisited []Point
+	up := Point{current[0] - 1, current[1]}
 	if _, v := visited[up]; !v && up[0] >= 0 {
 		unvisited = append(unvisited, up)
 	}
-	right := common.Point{current[0], current[1] + 1}
+	right := Point{current[0], current[1] + 1}
 	if _, v := visited[right]; !v && right[1] < sideLength {
 		unvisited = append(unvisited, right)
 	}
-	down := common.Point{current[0] + 1, current[1]}
+	down := Point{current[0] + 1, current[1]}
 	if _, v := visited[down]; !v && down[0] < sideLength {
 		unvisited = append(unvisited, down)
 	}
-	left := common.Point{current[0], current[1] - 1}
+	left := Point{current[0], current[1] - 1}
 	if _, v := visited[left]; !v && left[1] >= 0 {
 		unvisited = append(unvisited, left)
 	}
@@ -44,14 +46,14 @@ func getUnvisitedNeighbors(current common.Point, visited map[common.Point]bool, 
 
 func solve(puzzleInput PuzzleInput) int {
 	sideLength := int(math.Sqrt(float64(len(puzzleInput))))
-	endPos := common.Point{sideLength - 1, sideLength - 1}
-	visited := make(map[common.Point]bool)
-	distances := make(map[common.Point]int)
+	endPos := Point{sideLength - 1, sideLength - 1}
+	visited := make(map[Point]bool)
+	distances := make(map[Point]int)
 	pq := New()
 	for pos, _ := range puzzleInput {
 		distances[pos] = math.MaxInt64
 	}
-	current := common.Point{0, 0}
+	current := Point{0, 0}
 	distances[current] = 0
 	for {
 		for _, neighbor := range getUnvisitedNeighbors(current, visited, sideLength) {
@@ -83,12 +85,12 @@ func expand(puzzleInput PuzzleInput, by int) PuzzleInput {
 	newSideLength := sideLength * by
 	for i := 0; i < newSideLength; i++ {
 		for j := 0; j < newSideLength; j++ {
-			if _, exists := puzzleInput[common.Point{i, j}]; !exists {
-				newPoint := common.Point{i, j}
+			if _, exists := puzzleInput[Point{i, j}]; !exists {
+				newPoint := Point{i, j}
 				toAdd := int(math.Floor(float64(i/sideLength))) + int(math.Floor(float64(j/sideLength)))
 				origI := int(math.Mod(float64(i), float64(sideLength)))
 				origJ := int(math.Mod(float64(j), float64(sideLength)))
-				origPoint := common.Point{origI, origJ}
+				origPoint := Point{origI, origJ}
 				newRisk := puzzleInput[origPoint] + toAdd
 				newRiskRolled := newRisk
 				if newRisk > 9 {

@@ -40,5 +40,3 @@ func Time() func() {
 		log.Printf("time %s\n", time.Since(start))
 	}
 }
-
-type Point [2]int

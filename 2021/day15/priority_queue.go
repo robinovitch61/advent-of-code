@@ -3,13 +3,12 @@ package day15
 // from https://gist.github.com/vderyagin/4573099
 
 import (
-	"aoc/common"
 	"errors"
 )
 
 type Elem struct {
 	Score int
-	Data  common.Point
+	Data  Point
 }
 
 type priorityQueue struct {
