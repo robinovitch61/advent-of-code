@@ -2,70 +2,58 @@ package day15
 
 import (
 	"aoc/common"
+	"aoc/priority_queue"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
 )
 
-type Point [2]int
-
-type PuzzleInput map[Point]int
+type PuzzleInput map[common.Point]int
 
 func parseInput(input []string) PuzzleInput {
-	posToRisk := make(map[Point]int)
+	posToRisk := make(map[common.Point]int)
 	for i, row := range input {
 		for j, riskStr := range strings.Split(row, "") {
 			risk, _ := strconv.Atoi(riskStr)
-			posToRisk[Point{i, j}] = risk
+			posToRisk[common.Point{i, j}] = risk
 		}
 	}
 	return posToRisk
 }
 
-func getUnvisitedNeighbors(current Point, visited map[Point]bool, sideLength int) []Point {
-	var unvisited []Point
-	up := Point{current[0] - 1, current[1]}
+func getUnvisitedNeighbors(current common.Point, visited map[common.Point]bool, sideLength int) []common.Point {
+	var unvisited []common.Point
+	up := common.Point{current[0] - 1, current[1]}
 	if _, v := visited[up]; !v && up[0] >= 0 {
 		unvisited = append(unvisited, up)
 	}
-	right := Point{current[0], current[1] + 1}
+	right := common.Point{current[0], current[1] + 1}
 	if _, v := visited[right]; !v && right[1] < sideLength {
 		unvisited = append(unvisited, right)
 	}
-	down := Point{current[0] + 1, current[1]}
+	down := common.Point{current[0] + 1, current[1]}
 	if _, v := visited[down]; !v && down[0] < sideLength {
 		unvisited = append(unvisited, down)
 	}
-	left := Point{current[0], current[1] - 1}
+	left := common.Point{current[0], current[1] - 1}
 	if _, v := visited[left]; !v && left[1] >= 0 {
 		unvisited = append(unvisited, left)
 	}
 	return unvisited
 }
 
-func smallestDistanceUnvisitedPoint(distances map[Point]int, visited map[Point]bool) Point {
-	minDist := math.MaxInt64
-	var minPoint Point
-	for point, dist := range distances {
-		if _, v := visited[point]; dist < minDist && !v {
-			minDist = dist
-			minPoint = point
-		}
-	}
-	return minPoint
-}
-
 func p1(puzzleInput PuzzleInput) int {
 	defer common.Time()()
 	sideLength := int(math.Sqrt(float64(len(puzzleInput))))
-	endPos := Point{sideLength - 1, sideLength - 1}
-	visited := make(map[Point]bool)
-	distances := make(map[Point]int)
+	endPos := common.Point{sideLength - 1, sideLength - 1}
+	visited := make(map[common.Point]bool)
+	distances := make(map[common.Point]int)
+	pq := priority_queue.New()
 	for pos, _ := range puzzleInput {
 		distances[pos] = math.MaxInt64
 	}
-	current := Point{0, 0}
+	current := common.Point{0, 0}
 	distances[current] = 0
 	for {
 		for _, neighbor := range getUnvisitedNeighbors(current, visited, sideLength) {
@@ -73,13 +61,15 @@ func p1(puzzleInput PuzzleInput) int {
 			prevDistance := distances[neighbor]
 			if distance < prevDistance {
 				distances[neighbor] = distance
+				pq.Enqueue(&priority_queue.Elem{Score: distance, Data: neighbor})
 			}
 		}
 		visited[current] = true
 		if current == endPos {
 			break
 		} else {
-			current = smallestDistanceUnvisitedPoint(distances, visited)
+			deq, _ := pq.Dequeue()
+			current = deq.Data
 		}
 	}
 	return distances[endPos]
