@@ -7,12 +7,6 @@ import (
 	"strings"
 )
 
-type Rule struct {
-	left    string
-	right   string
-	between string
-}
-
 type Rules map[string]string
 
 type PuzzleInput struct {
@@ -30,78 +24,78 @@ func parseInput(input []string) PuzzleInput {
 	return PuzzleInput{strings.Split(input[0], ""), rules}
 }
 
-func step(polymer []string, rules map[string]string) []string {
-	i := 0
-	for {
-		if i == len(polymer)-1 {
-			break
-		}
-		chunk := strings.Join(polymer[i:i+2], "")
-		if between, exists := rules[chunk]; exists {
-			betweenList := strings.Split(between, "")
-			polymer = append(polymer[:i+1], append(betweenList, polymer[i+1:]...)...)
-			i += len(betweenList)
-		}
-		i++
+func getPairGenerates(rules Rules) map[string][]string {
+	generatedPairs := make(map[string][]string)
+	for k, v := range rules {
+		first := string(k[0]) + v
+		second := v + string(k[1])
+		generatedPairs[k] = []string{first, second}
 	}
-	return polymer
+	return generatedPairs
 }
 
-func score(polymer []string) int {
-	counts := make(map[string]int)
-	for _, char := range polymer {
-		_, exists := counts[char]
-		if exists {
-			counts[char]++
-		} else {
-			counts[char] = 1
-		}
+func incrementMap(m map[string]int, k string, n int) {
+	_, exists := m[k]
+	if exists {
+		m[k] += n
+	} else {
+		m[k] = n
 	}
-	minCount := math.MaxInt64
-	maxCount := 0
-	for _, v := range counts {
-		if v < minCount {
-			minCount = v
-		}
-		if v > maxCount {
-			maxCount = v
-		}
-	}
-	return maxCount - minCount
 }
 
-func stepNTimes(initial []string, rules Rules, n int) []string {
-	for num := 0; num < n; num++ {
-		initial = step(initial, rules)
+func solve(puzzleInput PuzzleInput, steps int) int {
+	var polymer []string
+	polymer = puzzleInput.initial
+	pairGenerates := getPairGenerates(puzzleInput.rules)
+
+	pairCount := make(map[string]int)
+	letterCount := make(map[string]int)
+	for i := 0; i < len(polymer); i++ {
+		if i < len(polymer)-1 {
+			pair := strings.Join(polymer[i:i+2], "")
+			incrementMap(pairCount, pair, 1)
+		}
+		incrementMap(letterCount, polymer[i], 1)
 	}
-	return initial
+
+	var newPairCount map[string]int
+	for step := 0; step < steps; step++ {
+		newPairCount = make(map[string]int)
+		for pair, count := range pairCount {
+			newLetter := puzzleInput.rules[pair]
+			incrementMap(letterCount, newLetter, count)
+			newPairs := pairGenerates[pair]
+			for _, newPair := range newPairs {
+				incrementMap(newPairCount, newPair, count)
+			}
+		}
+		pairCount = make(map[string]int)
+		for k, v := range newPairCount {
+			pairCount[k] = v
+		}
+	}
+
+	min := math.MaxInt64
+	max := 0
+	for _, count := range letterCount {
+		if count < min {
+			min = count
+		}
+		if count > max {
+			max = count
+		}
+	}
+	return max - min
 }
 
 func p1(puzzleInput PuzzleInput) int {
 	defer common.Time()()
-	var polymer []string
-	polymer = puzzleInput.initial
-	polymer = stepNTimes(polymer, puzzleInput.rules, 10)
-	return score(polymer)
-}
-
-func memoizeRules(rules Rules, size int) Rules {
-	memo := make(map[string]string)
-	for rule, _ := range rules {
-		expanded := stepNTimes(strings.Split(rule, ""), rules, size)
-		memo[rule] = strings.Join(expanded, "")
-	}
-	return memo
+	return solve(puzzleInput, 10)
 }
 
 func p2(puzzleInput PuzzleInput) int {
 	defer common.Time()()
-	memoStepSize := 10
-	memo := memoizeRules(puzzleInput.rules, memoStepSize)
-	var polymer []string
-	polymer = puzzleInput.initial
-	polymer = stepNTimes(polymer, memo, 40/memoStepSize)
-	return score(polymer)
+	return solve(puzzleInput, 40)
 }
 
 func Run() {
