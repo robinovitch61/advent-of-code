@@ -78,9 +78,33 @@ func p1(puzzleInput PuzzleInput) int {
 	return solve(puzzleInput)
 }
 
+func expand(puzzleInput PuzzleInput, by int) PuzzleInput {
+	sideLength := int(math.Sqrt(float64(len(puzzleInput))))
+	newSideLength := sideLength * by
+	for i := 0; i < newSideLength; i++ {
+		for j := 0; j < newSideLength; j++ {
+			if _, exists := puzzleInput[common.Point{i, j}]; !exists {
+				newPoint := common.Point{i, j}
+				toAdd := int(math.Floor(float64(i/sideLength))) + int(math.Floor(float64(j/sideLength)))
+				origI := int(math.Mod(float64(i), float64(sideLength)))
+				origJ := int(math.Mod(float64(j), float64(sideLength)))
+				origPoint := common.Point{origI, origJ}
+				newRisk := puzzleInput[origPoint] + toAdd
+				newRiskRolled := newRisk
+				if newRisk > 9 {
+					newRiskRolled = newRisk - 9
+				}
+				puzzleInput[newPoint] = newRiskRolled
+			}
+		}
+	}
+	return puzzleInput
+}
+
 func p2(puzzleInput PuzzleInput) int {
 	defer common.Time()()
-	return -1
+	mod := expand(puzzleInput, 5)
+	return solve(mod)
 }
 
 func Run() {
