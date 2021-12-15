@@ -1,4 +1,4 @@
-package priority_queue
+package day15
 
 // from https://gist.github.com/vderyagin/4573099
 

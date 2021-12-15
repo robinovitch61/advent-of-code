@@ -2,7 +2,6 @@ package day15
 
 import (
 	"aoc/common"
-	"aoc/priority_queue"
 	"fmt"
 	"math"
 	"strconv"
@@ -43,13 +42,12 @@ func getUnvisitedNeighbors(current common.Point, visited map[common.Point]bool, 
 	return unvisited
 }
 
-func p1(puzzleInput PuzzleInput) int {
-	defer common.Time()()
+func solve(puzzleInput PuzzleInput) int {
 	sideLength := int(math.Sqrt(float64(len(puzzleInput))))
 	endPos := common.Point{sideLength - 1, sideLength - 1}
 	visited := make(map[common.Point]bool)
 	distances := make(map[common.Point]int)
-	pq := priority_queue.New()
+	pq := New()
 	for pos, _ := range puzzleInput {
 		distances[pos] = math.MaxInt64
 	}
@@ -61,7 +59,7 @@ func p1(puzzleInput PuzzleInput) int {
 			prevDistance := distances[neighbor]
 			if distance < prevDistance {
 				distances[neighbor] = distance
-				pq.Enqueue(&priority_queue.Elem{Score: distance, Data: neighbor})
+				pq.Enqueue(&Elem{Score: distance, Data: neighbor})
 			}
 		}
 		visited[current] = true
@@ -73,6 +71,11 @@ func p1(puzzleInput PuzzleInput) int {
 		}
 	}
 	return distances[endPos]
+}
+
+func p1(puzzleInput PuzzleInput) int {
+	defer common.Time()()
+	return solve(puzzleInput)
 }
 
 func p2(puzzleInput PuzzleInput) int {
