@@ -18,6 +18,7 @@ import (
 	"aoc/day15"
 	"aoc/day16"
 	"aoc/day17"
+	"aoc/day18"
 )
 
 func main() {
@@ -38,4 +39,5 @@ func main() {
 	day15.Run()
 	day16.Run()
 	day17.Run()
+	day18.Run()
 }
