@@ -10,11 +10,8 @@ import (
 type Pair struct {
 	left   *Pair
 	right  *Pair
+	parent *Pair
 	number int
-}
-
-type SnailFishNumber struct {
-	root Pair
 }
 
 func (p Pair) Print() {
@@ -29,6 +26,14 @@ func (p Pair) Print() {
 	}
 }
 
+func (p Pair) IsNumber() bool {
+	return p.left == nil && p.right == nil
+}
+
+type SnailFishNumber struct {
+	root Pair
+}
+
 func (s SnailFishNumber) Print() {
 	left, right := s.root.left, s.root.right
 	fmt.Print("[")
@@ -38,7 +43,46 @@ func (s SnailFishNumber) Print() {
 	fmt.Println("]")
 }
 
-func getLeftRightStr(s string) (string, string) {
+func (s SnailFishNumber) Add(o SnailFishNumber) SnailFishNumber {
+	return SnailFishNumber{Pair{&s.root, &o.root, nil, -1}}
+}
+
+func (s SnailFishNumber) Reduce() SnailFishNumber {
+	current := s.root
+	visited := make(map[Pair]bool)
+	//didAction := false
+	for {
+		if !(current.left == nil) && !visited[*current.left] && !current.left.IsNumber() {
+			current = *current.left
+		} else if !(current.right == nil) && !visited[*current.right] && !current.right.IsNumber() {
+			current = *current.right
+		} else {
+			if current == s.root && (visited[*current.right] || current.right.IsNumber()) {
+				break
+			}
+			visited[current] = true
+			current = *current.parent
+		}
+	}
+	return s
+}
+
+func parseToPair(s string, parent *Pair) Pair {
+	var pair Pair
+	pair.parent = parent
+	if !strings.ContainsAny(s, "[],") {
+		num, _ := strconv.Atoi(s)
+		pair.number = num
+		return pair
+	} else {
+		subLeft, subRight := parseLeftRightPairs(s, &pair)
+		pair.left = &subLeft
+		pair.right = &subRight
+		return pair
+	}
+}
+
+func splitLeftRightStrings(s string) (string, string) {
 	var leftStr string
 	var rightStr string
 	s = s[1 : len(s)-1]
@@ -62,26 +106,18 @@ func getLeftRightStr(s string) (string, string) {
 	return leftStr, rightStr
 }
 
-func parseToPair(s string) Pair {
-	if !strings.ContainsAny(s, "[],") {
-		num, _ := strconv.Atoi(s)
-		return Pair{nil, nil, num}
-	} else {
-		subLeft, subRight := getLeftRight(s)
-		return Pair{&subLeft, &subRight, -1}
-	}
-}
-
-func getLeftRight(s string) (Pair, Pair) {
-	leftStr, rightStr := getLeftRightStr(s)
-	left := parseToPair(leftStr)
-	right := parseToPair(rightStr)
+func parseLeftRightPairs(s string, parent *Pair) (Pair, Pair) {
+	leftStr, rightStr := splitLeftRightStrings(s)
+	left := parseToPair(leftStr, parent)
+	left.parent = parent
+	right := parseToPair(rightStr, parent)
+	right.parent = parent
 	return left, right
 }
 
-func fromString(s string) SnailFishNumber {
-	root := Pair{}
-	left, right := getLeftRight(s)
+func snailFishNumberFromString(s string) SnailFishNumber {
+	var root Pair
+	left, right := parseLeftRightPairs(s, &root)
 	root.left = &left
 	root.right = &right
 	snail := SnailFishNumber{root}
@@ -91,7 +127,7 @@ func fromString(s string) SnailFishNumber {
 func parseInput(input []string) []SnailFishNumber {
 	var nums []SnailFishNumber
 	for _, s := range input {
-		nums = append(nums, fromString(s))
+		nums = append(nums, snailFishNumberFromString(s))
 	}
 	return nums
 }
@@ -100,7 +136,9 @@ func p1(nums []SnailFishNumber) int {
 	defer common.Time()()
 	for _, num := range nums {
 		num.Print()
+		num.Reduce()
 	}
+	//snailFishNumberFromString("[1,2]").Add(snailFishNumberFromString("[[3,4],5]")).Print()
 	return -1
 }
 
