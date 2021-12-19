@@ -14,57 +14,49 @@ type Pair struct {
 	number int
 }
 
-func (p Pair) Print() {
+func (p Pair) printHelper() {
 	if p.left == nil && p.right == nil {
 		fmt.Print(p.number)
 	} else {
 		fmt.Print("[")
-		p.left.Print()
+		p.left.printHelper()
 		fmt.Print(",")
-		p.right.Print()
+		p.right.printHelper()
 		fmt.Print("]")
 	}
+}
+
+func (p Pair) Print() {
+	p.printHelper()
+	fmt.Println()
 }
 
 func (p Pair) IsNumber() bool {
 	return p.left == nil && p.right == nil
 }
 
-type SnailFishNumber struct {
-	root Pair
+func (p Pair) Add(o Pair) Pair {
+	return Pair{&p, &o, nil, -1}
 }
 
-func (s SnailFishNumber) Print() {
-	left, right := s.root.left, s.root.right
-	fmt.Print("[")
-	left.Print()
-	fmt.Print(",")
-	right.Print()
-	fmt.Println("]")
-}
-
-func (s SnailFishNumber) Add(o SnailFishNumber) SnailFishNumber {
-	return SnailFishNumber{Pair{&s.root, &o.root, nil, -1}}
-}
-
-func (s SnailFishNumber) Reduce() SnailFishNumber {
-	current := s.root
+func (p Pair) Reduce() Pair {
+	current := p
 	visited := make(map[Pair]bool)
 	//didAction := false
 	for {
-		if !(current.left == nil) && !visited[*current.left] && !current.left.IsNumber() {
+		if !visited[*current.left] && !current.left.IsNumber() {
 			current = *current.left
-		} else if !(current.right == nil) && !visited[*current.right] && !current.right.IsNumber() {
+		} else if !visited[*current.right] && !current.right.IsNumber() {
 			current = *current.right
 		} else {
-			if current == s.root && (visited[*current.right] || current.right.IsNumber()) {
+			if current == p && (visited[*current.right] || current.right.IsNumber()) {
 				break
 			}
 			visited[current] = true
 			current = *current.parent
 		}
 	}
-	return s
+	return p
 }
 
 func parseToPair(s string, parent *Pair) Pair {
@@ -115,34 +107,33 @@ func parseLeftRightPairs(s string, parent *Pair) (Pair, Pair) {
 	return left, right
 }
 
-func snailFishNumberFromString(s string) SnailFishNumber {
-	var root Pair
-	left, right := parseLeftRightPairs(s, &root)
-	root.left = &left
-	root.right = &right
-	snail := SnailFishNumber{root}
-	return snail
+func PairFromString(s string) Pair {
+	var pair Pair
+	left, right := parseLeftRightPairs(s, &pair)
+	pair.left = &left
+	pair.right = &right
+	return pair
 }
 
-func parseInput(input []string) []SnailFishNumber {
-	var nums []SnailFishNumber
+func parseInput(input []string) []Pair {
+	var nums []Pair
 	for _, s := range input {
-		nums = append(nums, snailFishNumberFromString(s))
+		nums = append(nums, PairFromString(s))
 	}
 	return nums
 }
 
-func p1(nums []SnailFishNumber) int {
+func p1(nums []Pair) int {
 	defer common.Time()()
 	for _, num := range nums {
 		num.Print()
 		num.Reduce()
 	}
-	//snailFishNumberFromString("[1,2]").Add(snailFishNumberFromString("[[3,4],5]")).Print()
+	//PairFromString("[1,2]").Add(PairFromString("[[3,4],5]")).Print()
 	return -1
 }
 
-func p2(nums []SnailFishNumber) int {
+func p2(nums []Pair) int {
 	defer common.Time()()
 	return -1
 }
