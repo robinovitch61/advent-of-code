@@ -34,7 +34,12 @@ func (p Pair) IsNumber() bool {
 }
 
 func (p Pair) Add(o Pair) Pair {
-	return Pair{&p, &o, nil, -1}
+	var newPair Pair
+	p.parent = &newPair
+	o.parent = &newPair
+	newPair.left = &p
+	newPair.right = &o
+	return newPair
 }
 
 func shouldSplit(pair *Pair) bool {
@@ -213,8 +218,8 @@ func p1(nums []Pair) int {
 	defer common.Time()()
 	sum := nums[0].Reduce()
 	for i := 1; i < len(nums); i++ {
-		reduced := nums[i].Reduce()
-		sum = sum.Add(reduced)
+		sum = sum.Add(nums[i])
+		fmt.Println(sum.ToString())
 		sum = sum.Reduce()
 	}
 	fmt.Println(sum.ToString())
