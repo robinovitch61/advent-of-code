@@ -116,13 +116,13 @@ func possiblyExplode(p *Pair) bool {
 			fmt.Println(p.ToString())
 			fmt.Println(current.ToString())
 			addToFirstLeft(current, current.left.number)
-			fmt.Println("After left")
-			fmt.Println(p.ToString())
+			//fmt.Println("After left")
+			//fmt.Println(p.ToString())
 			addToFirstRight(current, current.right.number)
-			fmt.Println("After right")
-			fmt.Println(p.ToString())
+			//fmt.Println("After right")
+			//fmt.Println(p.ToString())
 			*current = Pair{parent: current.parent, number: 0}
-			fmt.Println("After reset")
+			//fmt.Println("After reset")
 			fmt.Println(p.ToString())
 			return true
 		}
@@ -153,7 +153,7 @@ func possiblySplit(p *Pair) bool {
 			fmt.Println("Splitting")
 			fmt.Println(p.ToString())
 			splitPair(current.left)
-			fmt.Println("After split")
+			//fmt.Println("After split")
 			fmt.Println(p.ToString())
 			return true
 		} else if current.right.ShouldSplit() {
@@ -161,7 +161,7 @@ func possiblySplit(p *Pair) bool {
 			fmt.Println("Splitting")
 			fmt.Println(p.ToString())
 			splitPair(current.right)
-			fmt.Println("After split")
+			//fmt.Println("After split")
 			fmt.Println(p.ToString())
 			return true
 		}
@@ -183,7 +183,8 @@ func possiblySplit(p *Pair) bool {
 }
 
 func (p *Pair) Reduce() *Pair {
-	for didSplit, didExplode := true, true; didSplit || didExplode; {
+	didSplit, didExplode := true, true
+	for didSplit || didExplode {
 		for didExplode {
 			didExplode = possiblyExplode(p)
 		}
