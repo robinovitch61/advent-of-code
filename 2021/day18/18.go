@@ -15,7 +15,7 @@ type Pair struct {
 	number int
 }
 
-func (p Pair) ToString() string {
+func (p *Pair) ToString() string {
 	if p.IsNumber() {
 		return strconv.Itoa(p.number)
 	} else {
@@ -29,123 +29,122 @@ func (p Pair) ToString() string {
 	}
 }
 
-func (p Pair) IsNumber() bool {
+func (p *Pair) IsNumber() bool {
 	return p.left == nil && p.right == nil
-}
-
-func (p Pair) Add(o Pair) Pair {
-	var newPair Pair
-	p.parent = &newPair
-	o.parent = &newPair
-	newPair.left = &p
-	newPair.right = &o
-	return newPair
 }
 
 func shouldSplit(pair *Pair) bool {
 	return pair.IsNumber() && pair.number >= 10
 }
 
-func splitPair(pair *Pair, parent *Pair) {
+func splitPair(pair *Pair) {
 	num := float64(pair.number)
-	pair.left = &Pair{nil, nil, parent, int(math.Floor(num / 2))}
-	pair.right = &Pair{nil, nil, parent, int(math.Ceil(num / 2))}
+	*pair = Pair{nil, nil, pair.parent, 0}
+	pair.left = &Pair{nil, nil, pair, int(math.Floor(num / 2))}
+	pair.right = &Pair{nil, nil, pair, int(math.Ceil(num / 2))}
 }
 
-func addToFirstLeft(startPair Pair, number int) {
+func addToFirstLeft(startPair *Pair, number int) {
 	visited := make(map[Pair]bool)
-	visited[startPair] = true
-	current := *startPair.parent
+	visited[*startPair] = true
+	current := startPair.parent
 	for !(current.parent == nil && visited[*current.left]) {
 		if visited[*current.left] {
-			visited[current] = true
-			current = *current.parent
+			visited[*current] = true
+			current = current.parent
 		} else {
 			if current.left.IsNumber() {
 				current.left.number += number
 				return
 			} else {
-				current = *current.left
+				current = current.left
 				for !current.right.IsNumber() {
-					current = *current.right
+					current = current.right
 				}
 				current.right.number += number
-				break
+				return
 			}
 		}
 	}
 }
 
-func addToFirstRight(startPair Pair, number int) {
+func addToFirstRight(startPair *Pair, number int) {
 	visited := make(map[Pair]bool)
-	visited[startPair] = true
-	current := *startPair.parent
+	visited[*startPair] = true
+	current := startPair.parent
 	for !(current.parent == nil && visited[*current.right]) {
 		if visited[*current.right] {
-			visited[current] = true
-			current = *current.parent
+			visited[*current] = true
+			current = current.parent
 		} else {
 			if current.right.IsNumber() {
 				current.right.number += number
 				return
 			} else {
-				current = *current.right
+				current = current.right
 				for !current.left.IsNumber() {
-					current = *current.left
+					current = current.left
 				}
 				current.left.number += number
-				break
+				return
 			}
 		}
+		//fmt.Println("\t", current.ToString())
+		//fmt.Println("\t", current.parent)
 	}
 }
 
-func traverse(p Pair) (Pair, bool) {
+func explode(pair *Pair) {
+	//fmt.Println("Exploding")
+	//fmt.Println(pair.ToString())
+	addToFirstLeft(pair, pair.left.number)
+	addToFirstRight(pair, pair.right.number)
+	*pair = Pair{nil, nil, pair.parent, 0}
+}
+
+func traverse(p *Pair) bool {
 	current := p
 	level := 1
 	visited := make(map[Pair]bool)
 	for {
 		if level > 4 {
-			addToFirstLeft(current, current.left.number)
-			addToFirstRight(current, current.right.number)
-			newPair := Pair{nil, nil, current.parent, 0}
-			if *current.parent.right == current {
-				*current.parent.right = newPair
-			} else if *current.parent.left == current {
-				*current.parent.left = newPair
-			} else {
-				panic("")
-			}
-			return p, true
+			//fmt.Println()
+			//fmt.Println(p.ToString())
+			explode(current)
+			//fmt.Println(p.ToString())
+			return true
 		}
 		if shouldSplit(current.left) {
-			splitPair(current.left, &current)
-			return p, true
+			splitPair(current.left)
+			return true
 		}
 		if shouldSplit(current.right) {
-			splitPair(current.right, &current)
-			return p, true
+			splitPair(current.right)
+			return true
 		}
 		if !visited[*current.left] && !current.left.IsNumber() {
-			current = *current.left
+			current = current.left
 			level++
 		} else if !visited[*current.right] && !current.right.IsNumber() {
-			current = *current.right
+			current = current.right
 			level++
 		} else {
 			if current.parent == nil && (visited[*current.right] || current.right.IsNumber()) {
-				return p, false
+				return false
 			}
-			visited[current] = true
-			current = *current.parent
+			visited[*current] = true
+			current = current.parent
 			level--
 		}
 	}
 }
 
-func (p Pair) Reduce() Pair {
-	for didSplitOrExplode := true; didSplitOrExplode == true; {
-		p, didSplitOrExplode = traverse(p)
+func (p *Pair) Reduce() *Pair {
+	for {
+		didSplitOrExplode := traverse(p)
+		if !didSplitOrExplode {
+			break
+		}
 	}
 	return p
 }
@@ -214,12 +213,29 @@ func parseInput(input []string) []Pair {
 	return nums
 }
 
+func setParents(toSet *Pair, parent *Pair) {
+	toSet.parent = parent
+	if toSet.left != nil {
+		setParents(toSet.left, toSet)
+	}
+	if toSet.right != nil {
+		setParents(toSet.right, toSet)
+	}
+}
+
+func addPairs(p1 *Pair, p2 *Pair) *Pair {
+	newNode := &Pair{p1, p2, nil, 0}
+	setParents(p1, newNode)
+	setParents(p2, newNode)
+	return newNode
+}
+
 func p1(nums []Pair) int {
 	defer common.Time()()
 	sum := nums[0].Reduce()
 	for i := 1; i < len(nums); i++ {
-		sum = sum.Add(nums[i])
-		fmt.Println(sum.ToString())
+		sum = addPairs(sum, &nums[i])
+		//fmt.Println(sum.ToString())
 		sum = sum.Reduce()
 	}
 	fmt.Println(sum.ToString())
