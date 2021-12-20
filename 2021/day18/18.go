@@ -102,7 +102,7 @@ func explode(pair *Pair) {
 	*pair = Pair{nil, nil, pair.parent, 0}
 }
 
-func traverse(p *Pair) bool {
+func possiblyExplode(p *Pair) bool {
 	current := p
 	level := 1
 	visited := make(map[Pair]bool)
@@ -114,6 +114,28 @@ func traverse(p *Pair) bool {
 			//fmt.Println(p.ToString())
 			return true
 		}
+		if !visited[*current.left] && !current.left.IsNumber() {
+			current = current.left
+			level++
+		} else if !visited[*current.right] && !current.right.IsNumber() {
+			current = current.right
+			level++
+		} else {
+			if current.parent == nil && (visited[*current.right] || current.right.IsNumber()) {
+				return false
+			}
+			visited[*current] = true
+			current = current.parent
+			level--
+		}
+	}
+}
+
+func possiblySplit(p *Pair) bool {
+	current := p
+	level := 1
+	visited := make(map[Pair]bool)
+	for {
 		if shouldSplit(current.left) {
 			splitPair(current.left)
 			return true
@@ -140,11 +162,12 @@ func traverse(p *Pair) bool {
 }
 
 func (p *Pair) Reduce() *Pair {
-	for {
-		didSplitOrExplode := traverse(p)
-		if !didSplitOrExplode {
-			break
+	for didSplit, didExplode := true, true; didSplit || didExplode; {
+		for didExplode {
+			didExplode = possiblyExplode(p)
 		}
+		didSplit = possiblySplit(p)
+		didExplode = possiblyExplode(p)
 	}
 	return p
 }
@@ -230,14 +253,72 @@ func addPairs(p1 *Pair, p2 *Pair) *Pair {
 	return newNode
 }
 
-func p1(nums []Pair) int {
-	defer common.Time()()
-	sum := nums[0].Reduce()
-	for i := 1; i < len(nums); i++ {
-		sum = addPairs(sum, &nums[i])
-		//fmt.Println(sum.ToString())
+func test() {
+	var pair Pair
+	var pairs []Pair
+	var sum Pair
+
+	testSum := func(input []string, expected string) {
+		pairs = parseInput(input)
+		sum = addAllPairs(pairs)
+		if sum.ToString() != expected {
+			fmt.Println("Got " + sum.ToString())
+			fmt.Println("Not " + expected)
+			panic("")
+		}
+	}
+
+	testExplode := func(toExplode string, expected string) {
+		pair = parseToPair(toExplode, nil)
+		possiblyExplode(&pair)
+		if pair.ToString() != expected {
+			fmt.Println("Got " + pair.ToString())
+			fmt.Println("Not " + expected)
+			panic("")
+		}
+	}
+
+	testSum([]string{"[1,2]", "[[3,4],5]"}, "[[1,2],[[3,4],5]]")
+
+	testExplode("[[[[[9,8],1],2],3],4]", "[[[[0,9],2],3],4]")
+	testExplode("[7,[6,[5,[4,[3,2]]]]]", "[7,[6,[5,[7,0]]]]")
+	testExplode("[[6,[5,[4,[3,2]]]],1]", "[[6,[5,[7,0]]],3]")
+	testExplode("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")
+	testExplode("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[7,0]]]]")
+
+	testSum([]string{"[[[[4,3],4],4],[7,[[8,4],9]]]", "[1,1]"}, "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
+	testSum([]string{"[1,1]", "[2,2]", "[3,3]", "[4,4]"}, "[[[[1,1],[2,2]],[3,3]],[4,4]]")
+	testSum([]string{"[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]"}, "[[[[3,0],[5,3]],[4,4]],[5,5]]")
+	testSum([]string{"[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]", "[6,6]"}, "[[[[5,0],[7,4]],[5,5]],[6,6]]")
+	testSum([]string{"[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]", "[7,[5,[[3,8],[1,4]]]]"}, "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]")
+	//testSum([]string{
+	//	"[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]",
+	//	"[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]",
+	//	"[[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]",
+	//	"[[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]",
+	//	"[7,[5,[[3,8],[1,4]]]]",
+	//	"[[2,[2,2]],[8,[8,1]]]",
+	//	"[2,9]",
+	//	"[1,[[[9,3],9],[[9,0],[0,7]]]]",
+	//	"[[[5,[7,4]],7],1]",
+	//	"[[[[4,2],2],6],[8,7]]",
+	//}, "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]")
+
+	fmt.Println("Tests passed")
+}
+
+func addAllPairs(pairs []Pair) Pair {
+	sum := pairs[0].Reduce()
+	for i := 1; i < len(pairs); i++ {
+		sum = addPairs(sum, &pairs[i])
 		sum = sum.Reduce()
 	}
+	return *sum
+}
+
+func p1(pairs []Pair) int {
+	defer common.Time()()
+	sum := addAllPairs(pairs)
 	fmt.Println(sum.ToString())
 	return -1
 }
@@ -249,6 +330,7 @@ func p2(nums []Pair) int {
 
 func Run() {
 	common.PrintDay(18)
+	test()
 	input := common.ReadFile("18")
 	nums := parseInput(input)
 	fmt.Println(p1(nums))
