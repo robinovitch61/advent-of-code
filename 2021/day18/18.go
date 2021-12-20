@@ -15,21 +15,18 @@ type Pair struct {
 	number int
 }
 
-func (p Pair) printHelper() {
-	if p.left == nil && p.right == nil {
-		fmt.Print(p.number)
+func (p Pair) ToString() string {
+	if p.IsNumber() {
+		return strconv.Itoa(p.number)
 	} else {
-		fmt.Print("[")
-		p.left.printHelper()
-		fmt.Print(",")
-		p.right.printHelper()
-		fmt.Print("]")
+		res := ""
+		res += "["
+		res += p.left.ToString()
+		res += ","
+		res += p.right.ToString()
+		res += "]"
+		return res
 	}
-}
-
-func (p Pair) Print() {
-	p.printHelper()
-	fmt.Println()
 }
 
 func (p Pair) IsNumber() bool {
@@ -98,60 +95,52 @@ func addToFirstRight(startPair Pair, number int) {
 	}
 }
 
-func (p Pair) Reduce() Pair {
-	splitOrExplode := true
-	for splitOrExplode == true {
-		splitOrExplode = false
-		current := p
-		level := 1
-		visited := make(map[Pair]bool)
-		for {
-			if level > 4 {
-				fmt.Println("EXPLODING")
-				current.Print()
-				addToFirstLeft(current, current.left.number)
-				addToFirstRight(current, current.right.number)
-				newPair := Pair{nil, nil, current.parent, 0}
-				if *current.parent.right == current {
-					*current.parent.right = newPair
-				} else if *current.parent.left == current {
-					*current.parent.left = newPair
-				} else {
-					panic("")
-				}
-				p.Print()
-				splitOrExplode = true
-				break
-			}
-			if shouldSplit(current.left) {
-				fmt.Println("Splitting")
-				current.left.Print()
-				splitPair(current.left, &current)
-				splitOrExplode = true
-				break
-			}
-			if shouldSplit(current.right) {
-				fmt.Println("Splitting")
-				current.right.Print()
-				splitPair(current.right, &current)
-				splitOrExplode = true
-				break
-			}
-			if !visited[*current.left] && !current.left.IsNumber() {
-				current = *current.left
-				level++
-			} else if !visited[*current.right] && !current.right.IsNumber() {
-				current = *current.right
-				level++
+func traverse(p Pair) (Pair, bool) {
+	current := p
+	level := 1
+	visited := make(map[Pair]bool)
+	for {
+		if level > 4 {
+			addToFirstLeft(current, current.left.number)
+			addToFirstRight(current, current.right.number)
+			newPair := Pair{nil, nil, current.parent, 0}
+			if *current.parent.right == current {
+				*current.parent.right = newPair
+			} else if *current.parent.left == current {
+				*current.parent.left = newPair
 			} else {
-				if current.parent == nil && (visited[*current.right] || current.right.IsNumber()) {
-					break
-				}
-				visited[current] = true
-				current = *current.parent
-				level--
+				panic("")
 			}
+			return p, true
 		}
+		if shouldSplit(current.left) {
+			splitPair(current.left, &current)
+			return p, true
+		}
+		if shouldSplit(current.right) {
+			splitPair(current.right, &current)
+			return p, true
+		}
+		if !visited[*current.left] && !current.left.IsNumber() {
+			current = *current.left
+			level++
+		} else if !visited[*current.right] && !current.right.IsNumber() {
+			current = *current.right
+			level++
+		} else {
+			if current.parent == nil && (visited[*current.right] || current.right.IsNumber()) {
+				return p, false
+			}
+			visited[current] = true
+			current = *current.parent
+			level--
+		}
+	}
+}
+
+func (p Pair) Reduce() Pair {
+	for didSplitOrExplode := true; didSplitOrExplode == true; {
+		p, didSplitOrExplode = traverse(p)
 	}
 	return p
 }
@@ -224,20 +213,11 @@ func p1(nums []Pair) int {
 	defer common.Time()()
 	sum := nums[0].Reduce()
 	for i := 1; i < len(nums); i++ {
-		fmt.Println("Sum")
-		sum.Print()
-		fmt.Println("Next num")
-		nums[i].Print()
-		fmt.Println("Reduced")
 		reduced := nums[i].Reduce()
 		sum = sum.Add(reduced)
-		fmt.Println("New sum")
-		sum.Print()
 		sum = sum.Reduce()
-		fmt.Println("Reduced")
-		sum.Print()
 	}
-	sum.Print()
+	fmt.Println(sum.ToString())
 	return -1
 }
 
