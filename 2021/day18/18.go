@@ -3,6 +3,7 @@ package day18
 import (
 	"aoc/common"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -39,21 +40,52 @@ func (p Pair) Add(o Pair) Pair {
 	return Pair{&p, &o, nil, -1}
 }
 
+func shouldSplit(pair *Pair) bool {
+	return pair.IsNumber() && pair.number >= 10
+}
+
+func splitPair(pair *Pair, parent *Pair) {
+	num := float64(pair.number)
+	pair.left = &Pair{nil, nil, parent, int(math.Floor(num / 2))}
+	pair.right = &Pair{nil, nil, parent, int(math.Ceil(num / 2))}
+}
+
+func explodePair(pair *Pair) {
+	return
+}
+
 func (p Pair) Reduce() Pair {
 	current := p
+	level := 1
 	visited := make(map[Pair]bool)
 	//didAction := false
 	for {
+		current.Print()
+		if level > 4 {
+			current.Print()
+			explodePair(&current)
+			fmt.Println("EXPLODE!")
+			current.Print()
+		}
+		if shouldSplit(current.left) {
+			splitPair(current.left, &current)
+		}
+		if shouldSplit(current.right) {
+			splitPair(current.right, &current)
+		}
 		if !visited[*current.left] && !current.left.IsNumber() {
 			current = *current.left
+			level++
 		} else if !visited[*current.right] && !current.right.IsNumber() {
 			current = *current.right
+			level++
 		} else {
 			if current == p && (visited[*current.right] || current.right.IsNumber()) {
 				break
 			}
 			visited[current] = true
 			current = *current.parent
+			level--
 		}
 	}
 	return p
