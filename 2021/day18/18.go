@@ -50,42 +50,107 @@ func splitPair(pair *Pair, parent *Pair) {
 	pair.right = &Pair{nil, nil, parent, int(math.Ceil(num / 2))}
 }
 
-func explodePair(pair *Pair) {
-	return
+func addToFirstLeft(startPair Pair, number int) {
+	visited := make(map[Pair]bool)
+	visited[startPair] = true
+	current := *startPair.parent
+	for !(current.parent == nil && visited[*current.left]) {
+		if visited[*current.left] {
+			visited[current] = true
+			current = *current.parent
+		} else {
+			if current.left.IsNumber() {
+				current.left.number += number
+				return
+			} else {
+				current = *current.left
+				for !current.right.IsNumber() {
+					current = *current.right
+				}
+				current.right.number += number
+				break
+			}
+		}
+	}
+}
+
+func addToFirstRight(startPair Pair, number int) {
+	visited := make(map[Pair]bool)
+	visited[startPair] = true
+	current := *startPair.parent
+	for !(current.parent == nil && visited[*current.right]) {
+		if visited[*current.right] {
+			visited[current] = true
+			current = *current.parent
+		} else {
+			if current.right.IsNumber() {
+				current.right.number += number
+				return
+			} else {
+				current = *current.right
+				for !current.left.IsNumber() {
+					current = *current.left
+				}
+				current.left.number += number
+				break
+			}
+		}
+	}
 }
 
 func (p Pair) Reduce() Pair {
-	current := p
-	level := 1
-	visited := make(map[Pair]bool)
-	//didAction := false
-	for {
-		current.Print()
-		if level > 4 {
-			current.Print()
-			explodePair(&current)
-			fmt.Println("EXPLODE!")
-			current.Print()
-		}
-		if shouldSplit(current.left) {
-			splitPair(current.left, &current)
-		}
-		if shouldSplit(current.right) {
-			splitPair(current.right, &current)
-		}
-		if !visited[*current.left] && !current.left.IsNumber() {
-			current = *current.left
-			level++
-		} else if !visited[*current.right] && !current.right.IsNumber() {
-			current = *current.right
-			level++
-		} else {
-			if current == p && (visited[*current.right] || current.right.IsNumber()) {
+	splitOrExplode := true
+	for splitOrExplode == true {
+		splitOrExplode = false
+		current := p
+		level := 1
+		visited := make(map[Pair]bool)
+		for {
+			if level > 4 {
+				fmt.Println("EXPLODING")
+				current.Print()
+				addToFirstLeft(current, current.left.number)
+				addToFirstRight(current, current.right.number)
+				newPair := Pair{nil, nil, current.parent, 0}
+				if *current.parent.right == current {
+					*current.parent.right = newPair
+				} else if *current.parent.left == current {
+					*current.parent.left = newPair
+				} else {
+					panic("")
+				}
+				p.Print()
+				splitOrExplode = true
 				break
 			}
-			visited[current] = true
-			current = *current.parent
-			level--
+			if shouldSplit(current.left) {
+				fmt.Println("Splitting")
+				current.left.Print()
+				splitPair(current.left, &current)
+				splitOrExplode = true
+				break
+			}
+			if shouldSplit(current.right) {
+				fmt.Println("Splitting")
+				current.right.Print()
+				splitPair(current.right, &current)
+				splitOrExplode = true
+				break
+			}
+			if !visited[*current.left] && !current.left.IsNumber() {
+				current = *current.left
+				level++
+			} else if !visited[*current.right] && !current.right.IsNumber() {
+				current = *current.right
+				level++
+			} else {
+				if current.parent == nil && (visited[*current.right] || current.right.IsNumber()) {
+					break
+				}
+				visited[current] = true
+				current = *current.parent
+				level--
+			}
 		}
 	}
 	return p
@@ -157,11 +222,22 @@ func parseInput(input []string) []Pair {
 
 func p1(nums []Pair) int {
 	defer common.Time()()
-	for _, num := range nums {
-		num.Print()
-		num.Reduce()
+	sum := nums[0].Reduce()
+	for i := 1; i < len(nums); i++ {
+		fmt.Println("Sum")
+		sum.Print()
+		fmt.Println("Next num")
+		nums[i].Print()
+		fmt.Println("Reduced")
+		reduced := nums[i].Reduce()
+		sum = sum.Add(reduced)
+		fmt.Println("New sum")
+		sum.Print()
+		sum = sum.Reduce()
+		fmt.Println("Reduced")
+		sum.Print()
 	}
-	//PairFromString("[1,2]").Add(PairFromString("[[3,4],5]")).Print()
+	sum.Print()
 	return -1
 }
 
