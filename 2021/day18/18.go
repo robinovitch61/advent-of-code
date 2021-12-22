@@ -250,6 +250,13 @@ func addPairs(p1 *Pair, p2 *Pair) *Pair {
 	return newNode
 }
 
+func magnitude(pair Pair) int {
+	if pair.IsNumber() {
+		return pair.number
+	}
+	return magnitude(*pair.left)*3 + magnitude(*pair.right)*2
+}
+
 func test() {
 	var pairs []Pair
 	var sum Pair
@@ -274,6 +281,16 @@ func test() {
 		}
 	}
 
+	testMag := func(toMag string, expected int) {
+		pair := parseToPair(toMag, nil)
+		mag := magnitude(pair)
+		if mag != expected {
+			fmt.Println("Got ", mag)
+			fmt.Println("Not ", expected)
+			panic("")
+		}
+	}
+
 	testExplode("[[[[[9,8],1],2],3],4]", "[[[[0,9],2],3],4]")
 	testExplode("[7,[6,[5,[4,[3,2]]]]]", "[7,[6,[5,[7,0]]]]")
 	testExplode("[[6,[5,[4,[3,2]]]],1]", "[[6,[5,[7,0]]],3]")
@@ -290,7 +307,6 @@ func test() {
 
 	testSum([]string{"[[[[7,7],[7,7]],[[8,7],[8,7]]],[[[7,0],[7,7]],9]]", "[[[[4,2],2],6],[8,7]]"}, "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]")
 	testSum([]string{"[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]", "[7,[5,[[3,8],[1,4]]]]"}, "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]")
-
 	testSum([]string{
 		"[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]",
 		"[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]",
@@ -303,6 +319,13 @@ func test() {
 		"[[[5,[7,4]],7],1]",
 		"[[[[4,2],2],6],[8,7]]",
 	}, "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]")
+
+	testMag("[[1,2],[[3,4],5]]", 143)
+	testMag("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]", 1384)
+	testMag("[[[[1,1],[2,2]],[3,3]],[4,4]]", 445)
+	testMag("[[[[3,0],[5,3]],[4,4]],[5,5]]", 791)
+	testMag("[[[[5,0],[7,4]],[5,5]],[6,6]]", 1137)
+	testMag("[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]", 3488)
 
 	fmt.Println("Tests passed")
 }
@@ -319,20 +342,43 @@ func addAllPairs(pairs []Pair) Pair {
 func p1(pairs []Pair) int {
 	defer common.Time()()
 	sum := addAllPairs(pairs)
-	fmt.Println(sum.ToString())
-	return -1
+	return magnitude(sum)
 }
 
-func p2(nums []Pair) int {
+func p2(input []string) int {
 	defer common.Time()()
-	return -1
+	maxMag := 0
+	pairs := parseInput(input)
+	var mag int
+	for i := 0; i < len(pairs)-1; i++ {
+		for j := 0; j < len(pairs)-1; j++ {
+			if i == j {
+				continue
+			}
+
+			// mutability is so fun
+			pairs = parseInput(input)
+			mag = magnitude(addAllPairs([]Pair{pairs[i], pairs[j]}))
+			if mag > maxMag {
+				maxMag = mag
+			}
+
+			// mutability is so fun
+			pairs = parseInput(input)
+			mag = magnitude(addAllPairs([]Pair{pairs[j], pairs[i]}))
+			if mag > maxMag {
+				maxMag = mag
+			}
+		}
+	}
+	return maxMag
 }
 
 func Run() {
 	common.PrintDay(18)
 	test()
 	input := common.ReadFile("18")
-	nums := parseInput(input)
-	fmt.Println(p1(nums))
-	//fmt.Println(p2(nums))
+	pairs := parseInput(input)
+	fmt.Println(p1(pairs))
+	fmt.Println(p2(input))
 }
