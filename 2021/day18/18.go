@@ -39,7 +39,6 @@ func (p Pair) ShouldSplit() bool {
 
 func splitPair(pair *Pair) {
 	num := float64(pair.number)
-	fmt.Println(num)
 	*pair = Pair{parent: pair.parent, number: 0}
 	pair.left = &Pair{parent: pair, number: int(math.Floor(num / 2))}
 	pair.right = &Pair{parent: pair, number: int(math.Ceil(num / 2))}
@@ -90,18 +89,12 @@ func addToFirstRight(startPair *Pair, number int) {
 				return
 			}
 		}
-		//fmt.Println("\t", current.ToString())
-		//fmt.Println("\t", current.parent)
 	}
 }
 
 func explode(pair *Pair) {
 	addToFirstLeft(pair, pair.left.number)
-	fmt.Println("After left")
-	fmt.Println(pair.ToString())
 	addToFirstRight(pair, pair.right.number)
-	fmt.Println("After right")
-	fmt.Println(pair.ToString())
 	*pair = Pair{parent: pair.parent, number: 0}
 }
 
@@ -111,19 +104,7 @@ func possiblyExplode(p *Pair) bool {
 	visited := make(map[Pair]bool)
 	for {
 		if level > 4 {
-			fmt.Println()
-			fmt.Println("Exploding")
-			fmt.Println(p.ToString())
-			fmt.Println(current.ToString())
-			addToFirstLeft(current, current.left.number)
-			//fmt.Println("After left")
-			//fmt.Println(p.ToString())
-			addToFirstRight(current, current.right.number)
-			//fmt.Println("After right")
-			//fmt.Println(p.ToString())
-			*current = Pair{parent: current.parent, number: 0}
-			//fmt.Println("After reset")
-			fmt.Println(p.ToString())
+			explode(current)
 			return true
 		}
 		if !visited[*current.left] && !current.left.IsNumber() {
@@ -149,25 +130,15 @@ func possiblySplit(p *Pair) bool {
 	visited := make(map[Pair]bool)
 	for {
 		if current.left.ShouldSplit() {
-			fmt.Println()
-			fmt.Println("Splitting")
-			fmt.Println(p.ToString())
 			splitPair(current.left)
-			//fmt.Println("After split")
-			fmt.Println(p.ToString())
-			return true
-		} else if current.right.ShouldSplit() {
-			fmt.Println()
-			fmt.Println("Splitting")
-			fmt.Println(p.ToString())
-			splitPair(current.right)
-			//fmt.Println("After split")
-			fmt.Println(p.ToString())
 			return true
 		}
 		if !visited[*current.left] && !current.left.IsNumber() {
 			current = current.left
 			level++
+		} else if current.right.ShouldSplit() {
+			splitPair(current.right)
+			return true
 		} else if !visited[*current.right] && !current.right.IsNumber() {
 			current = current.right
 			level++
@@ -183,13 +154,19 @@ func possiblySplit(p *Pair) bool {
 }
 
 func (p *Pair) Reduce() *Pair {
-	didSplit, didExplode := true, true
-	for didSplit || didExplode {
-		for didExplode {
-			didExplode = possiblyExplode(p)
+	didSplit, didExplode := false, false
+	for {
+		didExplode = possiblyExplode(p)
+		if didExplode {
+			continue
 		}
 		didSplit = possiblySplit(p)
-		didExplode = possiblyExplode(p)
+		if didSplit {
+			continue
+		}
+		if !(didSplit || didExplode) {
+			break
+		}
 	}
 	return p
 }
@@ -287,45 +264,45 @@ func test() {
 		}
 	}
 
-	//testExplode := func(toExplode string, expected string) {
-	//	pair := parseToPair(toExplode, nil)
-	//	possiblyExplode(&pair)
-	//	if pair.ToString() != expected {
-	//		fmt.Println("Got " + pair.ToString())
-	//		fmt.Println("Not " + expected)
-	//		panic("")
-	//	}
-	//}
-	//
-	//testExplode("[[[[[9,8],1],2],3],4]", "[[[[0,9],2],3],4]")
-	//testExplode("[7,[6,[5,[4,[3,2]]]]]", "[7,[6,[5,[7,0]]]]")
-	//testExplode("[[6,[5,[4,[3,2]]]],1]", "[[6,[5,[7,0]]],3]")
-	//testExplode("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")
-	//testExplode("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[7,0]]]]")
-	//
-	//testSum([]string{"[1,2]", "[[3,4],5]"}, "[[1,2],[[3,4],5]]")
-	//testSum([]string{"[[[[4,3],4],4],[7,[[8,4],9]]]", "[1,1]"}, "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
-	//testSum([]string{"[1,1]", "[2,2]", "[3,3]", "[4,4]"}, "[[[[1,1],[2,2]],[3,3]],[4,4]]")
-	//testSum([]string{"[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]"}, "[[[[3,0],[5,3]],[4,4]],[5,5]]")
-	//testSum([]string{"[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]", "[6,6]"}, "[[[[5,0],[7,4]],[5,5]],[6,6]]")
-	//testSum([]string{"[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]", "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]"}, "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]")
-	//testSum([]string{"[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]", "[2,9]"}, "[[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]]")
+	testExplode := func(toExplode string, expected string) {
+		pair := parseToPair(toExplode, nil)
+		possiblyExplode(&pair)
+		if pair.ToString() != expected {
+			fmt.Println("Got " + pair.ToString())
+			fmt.Println("Not " + expected)
+			panic("")
+		}
+	}
+
+	testExplode("[[[[[9,8],1],2],3],4]", "[[[[0,9],2],3],4]")
+	testExplode("[7,[6,[5,[4,[3,2]]]]]", "[7,[6,[5,[7,0]]]]")
+	testExplode("[[6,[5,[4,[3,2]]]],1]", "[[6,[5,[7,0]]],3]")
+	testExplode("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")
+	testExplode("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]", "[[3,[2,[8,0]]],[9,[5,[7,0]]]]")
+
+	testSum([]string{"[1,2]", "[[3,4],5]"}, "[[1,2],[[3,4],5]]")
+	testSum([]string{"[[[[4,3],4],4],[7,[[8,4],9]]]", "[1,1]"}, "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
+	testSum([]string{"[1,1]", "[2,2]", "[3,3]", "[4,4]"}, "[[[[1,1],[2,2]],[3,3]],[4,4]]")
+	testSum([]string{"[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]"}, "[[[[3,0],[5,3]],[4,4]],[5,5]]")
+	testSum([]string{"[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]", "[6,6]"}, "[[[[5,0],[7,4]],[5,5]],[6,6]]")
+	testSum([]string{"[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]", "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]"}, "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]")
+	testSum([]string{"[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]", "[2,9]"}, "[[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]]")
 
 	testSum([]string{"[[[[7,7],[7,7]],[[8,7],[8,7]]],[[[7,0],[7,7]],9]]", "[[[[4,2],2],6],[8,7]]"}, "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]")
-	//testSum([]string{"[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]", "[7,[5,[[3,8],[1,4]]]]"}, "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]")
+	testSum([]string{"[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]", "[7,[5,[[3,8],[1,4]]]]"}, "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]")
 
-	//testSum([]string{
-	//	"[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]",
-	//	"[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]",
-	//	"[[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]",
-	//	"[[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]",
-	//	"[7,[5,[[3,8],[1,4]]]]",
-	//	"[[2,[2,2]],[8,[8,1]]]",
-	//	"[2,9]",
-	//	"[1,[[[9,3],9],[[9,0],[0,7]]]]",
-	//	"[[[5,[7,4]],7],1]",
-	//	"[[[[4,2],2],6],[8,7]]",
-	//}, "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]")
+	testSum([]string{
+		"[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]",
+		"[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]",
+		"[[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]",
+		"[[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]",
+		"[7,[5,[[3,8],[1,4]]]]",
+		"[[2,[2,2]],[8,[8,1]]]",
+		"[2,9]",
+		"[1,[[[9,3],9],[[9,0],[0,7]]]]",
+		"[[[5,[7,4]],7],1]",
+		"[[[[4,2],2],6],[8,7]]",
+	}, "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]")
 
 	fmt.Println("Tests passed")
 }
