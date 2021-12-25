@@ -3,93 +3,113 @@ package day24
 import (
 	"aoc/common"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
 
-type Range struct {
-	low, high int
-}
-
 type Instruction struct {
-	isOn                   bool
-	xRange, yRange, zRange Range
+	kind, target string
+	valIsInt     bool
+	stringVal    string
+	intVal       int
 }
 
 type PuzzleInput []Instruction
 
-type Cube struct {
-	x, y, z int
-}
+type Registers map[string]int
 
-func parseRange(str string) Range {
-	str = str[2:]
-	split := strings.Split(str, "..")
-	low, _ := strconv.Atoi(split[0])
-	high, _ := strconv.Atoi(split[1])
-	return Range{low, high}
-}
-
-func parseInstruction(instruction string) Instruction {
-	isOn := false
-	split := strings.Split(instruction, " ")
-	if split[0] == "on" {
-		isOn = true
+func setVal(val string, instruction *Instruction) {
+	number, err := strconv.Atoi(val)
+	if err == nil {
+		instruction.intVal = number
+		instruction.valIsInt = true
+	} else {
+		instruction.stringVal = val
 	}
-	ranges := strings.Split(split[1], ",")
-	xRange := parseRange(ranges[0])
-	yRange := parseRange(ranges[1])
-	zRange := parseRange(ranges[2])
-	return Instruction{isOn, xRange, yRange, zRange}
 }
 
 func parseInput(input []string) PuzzleInput {
 	var instructions []Instruction
-	for _, row := range input {
-		instructions = append(instructions, parseInstruction(row))
+	for _, instrString := range input {
+		var instruction Instruction
+		split := strings.Split(instrString, " ")
+		instruction.kind = split[0]
+		instruction.target = split[1]
+		if len(split) == 3 {
+			setVal(split[2], &instruction)
+		}
+		instructions = append(instructions, instruction)
 	}
 	return instructions
 }
 
-func getRange(r Range) Range {
-	var low, high int
-	if r.low < -50 {
-		low = -50
-	} else {
-		low = r.low
+func getNext(stream *strings.Reader) int {
+	char, _ := stream.ReadByte()
+	num, _ := strconv.Atoi(string(char))
+	return num
+}
+
+func applyInstruction(stream *strings.Reader, reg Registers, instr Instruction) {
+	target := instr.target
+	var val int
+	if instr.kind != "inp" {
+		if instr.valIsInt {
+			val = instr.intVal
+		} else {
+			val = reg[instr.stringVal]
+		}
 	}
-	if r.high > 50 {
-		high = 50
-	} else {
-		high = r.high
+	switch instr.kind {
+	case "inp":
+		reg[target] = getNext(stream)
+	case "add":
+		reg[target] = reg[target] + val
+	case "mul":
+		reg[target] = reg[target] * val
+	case "div":
+		reg[target] = int(math.Floor(float64(reg[target] / val)))
+	case "mod":
+		reg[target] = reg[target] % val
+	case "eql":
+		if reg[target] == val {
+			reg[target] = 1
+		} else {
+			reg[target] = 0
+		}
 	}
-	return Range{low, high}
+}
+
+func containsZero(num int) bool {
+	str := strconv.Itoa(num)
+	if strings.Contains(str, "0") {
+		return true
+	}
+	return false
+}
+
+func runProgram(in int, reg Registers, instructions []Instruction) Registers {
+	reg["w"], reg["x"], reg["y"], reg["z"] = 0, 0, 0, 0
+	stream := strings.NewReader(strconv.Itoa(in))
+	for _, instr := range instructions {
+		applyInstruction(stream, reg, instr)
+	}
+	return reg
 }
 
 func p1(puzzleInput PuzzleInput) int {
 	defer common.Time()()
-
-	cubes := make(map[Cube]bool)
-	for _, instr := range puzzleInput {
-		xRange := getRange(instr.xRange)
-		for x := xRange.low; x <= xRange.high; x++ {
-			yRange := getRange(instr.yRange)
-			for y := yRange.low; y <= yRange.high; y++ {
-				zRange := getRange(instr.zRange)
-				for z := zRange.low; z <= zRange.high; z++ {
-					cubes[Cube{x, y, z}] = instr.isOn
-				}
-			}
+	reg := make(Registers)
+	for in := int(1e15 - 1); in >= 1e14; in-- {
+		if containsZero(in) {
+			continue
+		}
+		finalReg := runProgram(in, reg, puzzleInput)
+		if finalReg["z"] == 0 {
+			return in
 		}
 	}
-
-	count := 0
-	for _, isOn := range cubes {
-		if isOn {
-			count++
-		}
-	}
-	return count
+	return -1
 }
 
 func p2(puzzleInput PuzzleInput) int {
