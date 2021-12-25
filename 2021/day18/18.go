@@ -326,8 +326,6 @@ func test() {
 	testMag("[[[[3,0],[5,3]],[4,4]],[5,5]]", 791)
 	testMag("[[[[5,0],[7,4]],[5,5]],[6,6]]", 1137)
 	testMag("[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]", 3488)
-
-	fmt.Println("Tests passed")
 }
 
 func addAllPairs(pairs []Pair) Pair {
@@ -348,24 +346,21 @@ func p1(pairs []Pair) int {
 func p2(input []string) int {
 	defer common.Time()()
 	maxMag := 0
-	pairs := parseInput(input)
 	var mag int
-	for i := 0; i < len(pairs)-1; i++ {
-		for j := 0; j < len(pairs)-1; j++ {
+
+	// mutability is so fun
+	for i := 0; i < len(input)-1; i++ {
+		for j := 0; j < len(input)-1; j++ {
 			if i == j {
 				continue
 			}
 
-			// mutability is so fun
-			pairs = parseInput(input)
-			mag = magnitude(addAllPairs([]Pair{pairs[i], pairs[j]}))
+			mag = magnitude(addAllPairs([]Pair{parseToPair(input[i], nil), parseToPair(input[j], nil)}))
 			if mag > maxMag {
 				maxMag = mag
 			}
 
-			// mutability is so fun
-			pairs = parseInput(input)
-			mag = magnitude(addAllPairs([]Pair{pairs[j], pairs[i]}))
+			mag = magnitude(addAllPairs([]Pair{parseToPair(input[j], nil), parseToPair(input[i], nil)}))
 			if mag > maxMag {
 				maxMag = mag
 			}
