@@ -1,6 +1,8 @@
 package main
 
-import "aoc/day25"
+import (
+	"aoc/day19"
+)
 
 func main() {
 	//day01.Run()
@@ -21,9 +23,10 @@ func main() {
 	//day16.Run()
 	//day17.Run()
 	//day18.Run()
+	day19.Run()
 	//day20.Run()
 	//day21.Run()
 	//day22.Run()
 	//day24.Run()
-	day25.Run()
+	//day25.Run()
 }
