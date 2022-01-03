@@ -3,20 +3,52 @@ package day19
 import (
 	"aoc/common"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
-type PuzzleInput struct{}
-
-func parseInput(input []string) PuzzleInput {
-	return PuzzleInput{}
+type Beacon struct {
+	x, y, z int
 }
 
-func p1(puzzleInput PuzzleInput) int {
+func beaconFromString(s string) Beacon {
+	split := strings.Split(s, ",")
+	x, _ := strconv.Atoi(split[0])
+	y, _ := strconv.Atoi(split[1])
+	z, _ := strconv.Atoi(split[2])
+	return Beacon{x, y, z}
+}
+
+type Scanner struct {
+	id      int
+	beacons []Beacon
+}
+
+func parseInput(input []string) []Scanner {
+	text := strings.Join(input, "\n")
+	blocks := strings.Split(text, "\n\n")
+
+	var scanners []Scanner
+	for _, block := range blocks {
+		split := strings.Split(block, "\n")
+		header := split[0]
+		id, _ := strconv.Atoi(strings.Split(header, " ")[2])
+		var beacons []Beacon
+		for _, beacon := range split[1:] {
+			beacons = append(beacons, beaconFromString(beacon))
+		}
+		scanners = append(scanners, Scanner{id, beacons})
+	}
+	return scanners
+}
+
+func p1(scanners []Scanner) int {
 	defer common.Time()()
+	fmt.Println(scanners[0])
 	return -1
 }
 
-func p2(puzzleInput PuzzleInput) int {
+func p2(scanners []Scanner) int {
 	defer common.Time()()
 	return -1
 }
@@ -24,7 +56,7 @@ func p2(puzzleInput PuzzleInput) int {
 func Run() {
 	common.PrintDay(19)
 	input := common.ReadFile("19")
-	puzzleInput := parseInput(input)
-	fmt.Println(p1(puzzleInput))
-	fmt.Println(p2(puzzleInput))
+	scanners := parseInput(input)
+	fmt.Println(p1(scanners))
+	fmt.Println(p2(scanners))
 }
