@@ -172,10 +172,11 @@ func testRotate() {
 func allRotationMatrixes() []Matrix {
 	var matrixes []Matrix
 	degrees := []int{0, 90, 180, 270}
-	directions := []Matrix{rotateX(0), rotateX(90), rotateX(180), rotateX(270), rotateY(90), rotateY(270)}
+	// point x-axis in each of 6 directions, then rotate about it in 4 90deg increments
+	directions := []Matrix{rotateZ(0), rotateZ(90), rotateZ(180), rotateZ(270), rotateY(90), rotateY(270)}
 	for _, direction := range directions {
 		for _, deg := range degrees {
-			matrixes = append(matrixes, matMult(direction, rotateZ(deg)))
+			matrixes = append(matrixes, matMult(direction, rotateX(deg)))
 		}
 	}
 	return matrixes
@@ -184,30 +185,30 @@ func allRotationMatrixes() []Matrix {
 func testAllRotations() {
 	beacon := Beacon{1, 2, 3}
 	expected := map[Beacon]bool{
-		Beacon{1, 2, 3}:    true,
-		Beacon{2, -1, 3}:   true,
-		Beacon{-1, -2, 3}:  true,
-		Beacon{-2, 1, 3}:   true,
-		Beacon{1, 3, -2}:   true,
-		Beacon{2, 3, 1}:    true,
-		Beacon{-1, 3, 2}:   true,
-		Beacon{-2, 3, -1}:  true,
-		Beacon{1, -2, -3}:  true,
-		Beacon{2, 1, -3}:   true,
-		Beacon{-1, 2, -3}:  true,
-		Beacon{-2, -1, -3}: true,
-		Beacon{1, -3, 2}:   true,
-		Beacon{2, -3, -1}:  true,
-		Beacon{-1, -3, -2}: true,
-		Beacon{-2, -3, 1}:  true,
-		Beacon{3, 2, -1}:   true,
-		Beacon{3, -1, -2}:  true,
-		Beacon{3, -2, 1}:   true,
-		Beacon{3, 1, 2}:    true,
-		Beacon{-3, 2, 1}:   true,
-		Beacon{-3, -1, 2}:  true,
 		Beacon{-3, -2, -1}: true,
+		Beacon{-3, -1, 2}:  true,
 		Beacon{-3, 1, -2}:  true,
+		Beacon{-3, 2, 1}:   true,
+		Beacon{-2, -3, 1}:  true,
+		Beacon{-2, -1, -3}: true,
+		Beacon{-2, 1, 3}:   true,
+		Beacon{-2, 3, -1}:  true,
+		Beacon{-1, -3, -2}: true,
+		Beacon{-1, -2, 3}:  true,
+		Beacon{-1, 2, -3}:  true,
+		Beacon{-1, 3, 2}:   true,
+		Beacon{1, -3, 2}:   true,
+		Beacon{1, -2, -3}:  true,
+		Beacon{1, 2, 3}:    true,
+		Beacon{1, 3, -2}:   true,
+		Beacon{2, -3, -1}:  true,
+		Beacon{2, -1, 3}:   true,
+		Beacon{2, 1, -3}:   true,
+		Beacon{2, 3, 1}:    true,
+		Beacon{3, -2, 1}:   true,
+		Beacon{3, -1, -2}:  true,
+		Beacon{3, 1, 2}:    true,
+		Beacon{3, 2, -1}:   true,
 	}
 
 	obtained := make(map[Beacon]bool)
@@ -247,8 +248,92 @@ func parseInput(input []string) []Scanner {
 	return scanners
 }
 
+func removeScanner(scanners []Scanner, scanner Scanner) []Scanner {
+	var res []Scanner
+	for _, thisScanner := range scanners {
+		if thisScanner.id != scanner.id {
+			res = append(res, thisScanner)
+		}
+	}
+	return res
+}
+
+func rotateBeacons(beacons []Beacon, rotation Matrix) []Beacon {
+	var res []Beacon
+	for _, beacon := range beacons {
+		res = append(res, rotate(beacon, rotation))
+	}
+	return res
+}
+
+func getVectorsBetweenBeacons(beacons []Beacon) []Beacon {
+	var vectors []Beacon
+	for i := 0; i < len(beacons); i++ {
+		for j := 0; j < len(beacons); j++ {
+			if i != j {
+				vectors = append(vectors, beacons[i].Sub(beacons[j]))
+			}
+		}
+	}
+	return vectors
+}
+
+func getIntersection(first []Beacon, second []Beacon) []Beacon {
+	seen := make(map[Beacon]bool)
+	var both []Beacon
+	for _, beacon := range first {
+		seen[beacon] = true
+	}
+	for _, beacon := range second {
+		if seen[beacon] == true {
+			both = append(both, beacon)
+		}
+	}
+	return both
+}
+
+func checkForMatch(known Scanner, toCheck Scanner) []Beacon {
+	knownVectors := getVectorsBetweenBeacons(known.beacons)
+	for _, rotation := range allRotationMatrixes() {
+		rotatedBeacons := rotateBeacons(toCheck.beacons, rotation)
+		rotatedVectors := getVectorsBetweenBeacons(rotatedBeacons)
+		overlap := getIntersection(knownVectors, rotatedVectors)
+		// 12 choose 2 = 66 (12 beacons all paired with one another generating vectors)
+		// 66 * 2 = 132 because of both vector directions between beacons
+		if len(overlap) == 132 {
+			return overlap
+		}
+	}
+	return nil
+}
+
 func p1(scanners []Scanner) int {
 	defer common.Time()()
+	allMatchedBeacons := scanners[0].beacons
+	matchedScanners := []Scanner{scanners[0]}
+	var unmatchedScanners []Scanner
+	for _, scanner := range scanners[1:] {
+		unmatchedScanners = append(unmatchedScanners, scanner)
+	}
+
+	for len(matchedScanners) != len(scanners) {
+		for _, unmatched := range unmatchedScanners {
+			for _, matched := range matchedScanners {
+				matchedBeacons := checkForMatch(matched, unmatched)
+
+				if matchedBeacons != nil {
+					fmt.Println(matchedBeacons)
+					fmt.Println(len(matchedBeacons))
+					fmt.Println(unmatched.id)
+					panic("")
+					allMatchedBeacons = append(allMatchedBeacons, matchedBeacons...)
+					matchedScanners = append(matchedScanners, unmatched)
+					unmatchedScanners = removeScanner(unmatchedScanners, unmatched)
+				}
+			}
+		}
+	}
+
 	return -1
 }
 
