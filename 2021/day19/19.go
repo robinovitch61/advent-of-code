@@ -10,6 +10,16 @@ import (
 
 type Matrix [][]float64
 
+func (m Matrix) Transpose() Matrix {
+	t := Matrix{[]float64{0, 0, 0}, []float64{0, 0, 0}, []float64{0, 0, 0}}
+	for i := 0; i < len(m); i++ {
+		for j := 0; j < len(m[0]); j++ {
+			t[j][i] = m[i][j]
+		}
+	}
+	return t
+}
+
 func (m Matrix) Equal(other Matrix) bool {
 	if len(m) != len(other) || len(m[0]) != len(other[0]) {
 		return false
@@ -40,8 +50,16 @@ func (b Beacon) ToMatrix() Matrix {
 	}
 }
 
+func (b Beacon) Add(o Beacon) Beacon {
+	return Beacon{b.x + o.x, b.y + o.y, b.z + o.z}
+}
+
 func (b Beacon) Sub(o Beacon) Beacon {
-	return Beacon{o.x - b.x, o.y - b.y, o.z - b.z}
+	return Beacon{b.x - o.x, b.y - o.y, b.z - o.z}
+}
+
+func (b Beacon) Manhattan(o Beacon) int {
+	return int(math.Abs(float64(b.x-o.x)) + math.Abs(float64(b.y-o.y)) + math.Abs(float64(b.z-o.z)))
 }
 
 func beaconFromString(s string) Beacon {
@@ -266,80 +284,97 @@ func rotateBeacons(beacons []Beacon, rotation Matrix) []Beacon {
 	return res
 }
 
-func getVectorsBetweenBeacons(beacons []Beacon) []Beacon {
-	var vectors []Beacon
-	for i := 0; i < len(beacons); i++ {
-		for j := 0; j < len(beacons); j++ {
-			if i != j {
-				vectors = append(vectors, beacons[i].Sub(beacons[j]))
+func matchesNumOffsets(first []Beacon, second []Beacon, numMatching int) (Beacon, error) {
+	offsets := make(map[Beacon]int)
+	for _, b1 := range first {
+		for _, b2 := range second {
+			diff := b1.Sub(b2)
+			if count, exists := offsets[diff]; exists {
+				if count+1 == numMatching {
+					return diff, nil
+				}
+				offsets[diff]++
+			} else {
+				offsets[diff] = 1
 			}
 		}
 	}
-	return vectors
+	return Beacon{}, fmt.Errorf("no match")
 }
 
-func getIntersection(first []Beacon, second []Beacon) []Beacon {
-	seen := make(map[Beacon]bool)
-	var both []Beacon
-	for _, beacon := range first {
-		seen[beacon] = true
+func matchScanner(knownBeacons map[Beacon]bool, scanner Scanner) (Beacon, []Beacon) {
+	known := make([]Beacon, len(knownBeacons))
+	i := 0
+	for b := range knownBeacons {
+		known[i] = b
+		i++
 	}
-	for _, beacon := range second {
-		if seen[beacon] == true {
-			both = append(both, beacon)
-		}
-	}
-	return both
-}
 
-func checkForMatch(known Scanner, toCheck Scanner) []Beacon {
-	knownVectors := getVectorsBetweenBeacons(known.beacons)
 	for _, rotation := range allRotationMatrixes() {
-		rotatedBeacons := rotateBeacons(toCheck.beacons, rotation)
-		rotatedVectors := getVectorsBetweenBeacons(rotatedBeacons)
-		overlap := getIntersection(knownVectors, rotatedVectors)
-		// 12 choose 2 = 66 (12 beacons all paired with one another generating vectors)
-		// 66 * 2 = 132 because of both vector directions between beacons
-		if len(overlap) == 132 {
-			return overlap
+		rotatedBeacons := rotateBeacons(scanner.beacons, rotation)
+		if offset, err := matchesNumOffsets(known, rotatedBeacons, 12); err == nil {
+			var matchingBeacons []Beacon
+			for _, rotated := range rotatedBeacons {
+				matchingBeacons = append(matchingBeacons, rotated.Add(offset))
+			}
+			return offset, matchingBeacons
 		}
 	}
-	return nil
+	return Beacon{}, nil
 }
 
-func p1(scanners []Scanner) int {
-	defer common.Time()()
-	allMatchedBeacons := scanners[0].beacons
-	matchedScanners := []Scanner{scanners[0]}
+func solve(scanners []Scanner) (map[Beacon]bool, []Beacon) {
+	allMatchedBeacons := make(map[Beacon]bool)
+	for _, beacon := range scanners[0].beacons {
+		allMatchedBeacons[beacon] = true
+	}
+
+	scannerLocs := []Beacon{{}}
 	var unmatchedScanners []Scanner
 	for _, scanner := range scanners[1:] {
 		unmatchedScanners = append(unmatchedScanners, scanner)
 	}
 
-	for len(matchedScanners) != len(scanners) {
-		for _, unmatched := range unmatchedScanners {
-			for _, matched := range matchedScanners {
-				matchedBeacons := checkForMatch(matched, unmatched)
+	for len(unmatchedScanners) > 0 {
+		for _, unmatchedScanner := range unmatchedScanners {
+			scannerLoc, matchedBeacons := matchScanner(allMatchedBeacons, unmatchedScanner)
 
-				if matchedBeacons != nil {
-					fmt.Println(matchedBeacons)
-					fmt.Println(len(matchedBeacons))
-					fmt.Println(unmatched.id)
-					panic("")
-					allMatchedBeacons = append(allMatchedBeacons, matchedBeacons...)
-					matchedScanners = append(matchedScanners, unmatched)
-					unmatchedScanners = removeScanner(unmatchedScanners, unmatched)
+			if matchedBeacons != nil {
+				for _, beacon := range matchedBeacons {
+					allMatchedBeacons[beacon] = true
 				}
+				scannerLocs = append(scannerLocs, scannerLoc)
+				unmatchedScanners = removeScanner(unmatchedScanners, unmatchedScanner)
+				break
 			}
 		}
 	}
 
-	return -1
+	return allMatchedBeacons, scannerLocs
+}
+
+func p1(scanners []Scanner) int {
+	defer common.Time()()
+	allMatchedBeacons, _ := solve(scanners)
+	return len(allMatchedBeacons)
 }
 
 func p2(scanners []Scanner) int {
 	defer common.Time()()
-	return -1
+	_, scannerLocs := solve(scanners)
+	maxDist := 0
+	for i := 0; i < len(scannerLocs); i++ {
+		for j := 0; j < len(scannerLocs); j++ {
+			if i == j {
+				continue
+			}
+			dist := scannerLocs[i].Manhattan(scannerLocs[j])
+			if dist > maxDist {
+				maxDist = dist
+			}
+		}
+	}
+	return maxDist
 }
 
 func Run() {
