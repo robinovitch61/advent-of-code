@@ -83,13 +83,13 @@ func matMult(A, B Matrix) Matrix {
 	}
 	var res Matrix
 	for i := 0; i < len(A); i++ {
-		var row []float64
+		row := make([]float64, len(B[0]))
 		for j := 0; j < len(B[0]); j++ {
 			var entry float64
 			for k := 0; k < len(A[0]); k++ {
 				entry += A[i][k] * B[k][j]
 			}
-			row = append(row, entry)
+			row[j] = entry
 		}
 		res = append(res, row)
 	}
@@ -188,16 +188,16 @@ func testRotate() {
 }
 
 func allRotationMatrixes() []Matrix {
-	var matrixes []Matrix
+	var matrices []Matrix
 	degrees := []int{0, 90, 180, 270}
 	// point x-axis in each of 6 directions, then rotate about it in 4 90deg increments
 	directions := []Matrix{rotateZ(0), rotateZ(90), rotateZ(180), rotateZ(270), rotateY(90), rotateY(270)}
 	for _, direction := range directions {
 		for _, deg := range degrees {
-			matrixes = append(matrixes, matMult(direction, rotateX(deg)))
+			matrices = append(matrices, matMult(direction, rotateX(deg)))
 		}
 	}
-	return matrixes
+	return matrices
 }
 
 func testAllRotations() {
@@ -284,10 +284,10 @@ func rotateBeacons(beacons []Beacon, rotation Matrix) []Beacon {
 	return res
 }
 
-func matchesNumOffsets(first []Beacon, second []Beacon, numMatching int) (Beacon, error) {
+func matchesNumOffsets(knownBeacons map[Beacon]bool, beacons []Beacon, numMatching int) (Beacon, error) {
 	offsets := make(map[Beacon]int)
-	for _, b1 := range first {
-		for _, b2 := range second {
+	for b1 := range knownBeacons {
+		for _, b2 := range beacons {
 			diff := b1.Sub(b2)
 			if count, exists := offsets[diff]; exists {
 				if count+1 == numMatching {
@@ -302,28 +302,24 @@ func matchesNumOffsets(first []Beacon, second []Beacon, numMatching int) (Beacon
 	return Beacon{}, fmt.Errorf("no match")
 }
 
-func matchScanner(knownBeacons map[Beacon]bool, scanner Scanner) (Beacon, []Beacon) {
-	known := make([]Beacon, len(knownBeacons))
-	i := 0
-	for b := range knownBeacons {
-		known[i] = b
-		i++
-	}
-
-	for _, rotation := range allRotationMatrixes() {
+func matchScanner(knownBeacons map[Beacon]bool, scanner Scanner, rotationMatrices []Matrix) (Beacon, []Beacon) {
+	for _, rotation := range rotationMatrices {
 		rotatedBeacons := rotateBeacons(scanner.beacons, rotation)
-		if offset, err := matchesNumOffsets(known, rotatedBeacons, 12); err == nil {
-			var matchingBeacons []Beacon
-			for _, rotated := range rotatedBeacons {
-				matchingBeacons = append(matchingBeacons, rotated.Add(offset))
+
+		if scannerLoc, err := matchesNumOffsets(knownBeacons, rotatedBeacons, 12); err == nil {
+			matchingBeacons := make([]Beacon, len(rotatedBeacons))
+			for i, rotated := range rotatedBeacons {
+				matchingBeacons[i] = rotated.Add(scannerLoc)
 			}
-			return offset, matchingBeacons
+			return scannerLoc, matchingBeacons
 		}
 	}
 	return Beacon{}, nil
 }
 
 func solve(scanners []Scanner) (map[Beacon]bool, []Beacon) {
+	rotationMatrices := allRotationMatrixes()
+
 	allMatchedBeacons := make(map[Beacon]bool)
 	for _, beacon := range scanners[0].beacons {
 		allMatchedBeacons[beacon] = true
@@ -337,7 +333,7 @@ func solve(scanners []Scanner) (map[Beacon]bool, []Beacon) {
 
 	for len(unmatchedScanners) > 0 {
 		for _, unmatchedScanner := range unmatchedScanners {
-			scannerLoc, matchedBeacons := matchScanner(allMatchedBeacons, unmatchedScanner)
+			scannerLoc, matchedBeacons := matchScanner(allMatchedBeacons, unmatchedScanner, rotationMatrices)
 
 			if matchedBeacons != nil {
 				for _, beacon := range matchedBeacons {
@@ -345,7 +341,6 @@ func solve(scanners []Scanner) (map[Beacon]bool, []Beacon) {
 				}
 				scannerLocs = append(scannerLocs, scannerLoc)
 				unmatchedScanners = removeScanner(unmatchedScanners, unmatchedScanner)
-				break
 			}
 		}
 	}
@@ -353,15 +348,10 @@ func solve(scanners []Scanner) (map[Beacon]bool, []Beacon) {
 	return allMatchedBeacons, scannerLocs
 }
 
-func p1(scanners []Scanner) int {
+func both(scanners []Scanner) (int, int) {
 	defer common.Time()()
-	allMatchedBeacons, _ := solve(scanners)
-	return len(allMatchedBeacons)
-}
+	allMatchedBeacons, scannerLocs := solve(scanners)
 
-func p2(scanners []Scanner) int {
-	defer common.Time()()
-	_, scannerLocs := solve(scanners)
 	maxDist := 0
 	for i := 0; i < len(scannerLocs); i++ {
 		for j := 0; j < len(scannerLocs); j++ {
@@ -374,7 +364,7 @@ func p2(scanners []Scanner) int {
 			}
 		}
 	}
-	return maxDist
+	return len(allMatchedBeacons), maxDist
 }
 
 func Run() {
@@ -382,6 +372,7 @@ func Run() {
 	test()
 	input := common.ReadFile("19")
 	scanners := parseInput(input)
-	fmt.Println(p1(scanners))
-	fmt.Println(p2(scanners))
+	p1, p2 := both(scanners)
+	fmt.Println(p1)
+	fmt.Println(p2)
 }
