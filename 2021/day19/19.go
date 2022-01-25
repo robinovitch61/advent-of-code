@@ -10,16 +10,6 @@ import (
 
 type Matrix [][]float64
 
-func (m Matrix) Transpose() Matrix {
-	t := Matrix{[]float64{0, 0, 0}, []float64{0, 0, 0}, []float64{0, 0, 0}}
-	for i := 0; i < len(m); i++ {
-		for j := 0; j < len(m[0]); j++ {
-			t[j][i] = m[i][j]
-		}
-	}
-	return t
-}
-
 func (m Matrix) Equal(other Matrix) bool {
 	if len(m) != len(other) || len(m[0]) != len(other[0]) {
 		return false
