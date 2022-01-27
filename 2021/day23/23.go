@@ -36,6 +36,9 @@ func (s State) Print() {
 func (s State) IsOrganized() bool {
 	for _, room := range s.rooms {
 		first := room[0]
+		if first == "." {
+			return false
+		}
 		for _, other := range room[1:] {
 			if first != other {
 				return false
@@ -202,6 +205,21 @@ func getPossibleMoves(state State) []Move {
 			"D": 3,
 		}[amphipod]
 
+		// check the room can be entered
+		canEnterRoom := true
+		for i, roomSpot := range state.rooms[destinationRoom] {
+			if i == 0 && roomSpot != "." {
+				canEnterRoom = false
+				break
+			} else if !(roomSpot == "." || roomSpot == amphipod) {
+				canEnterRoom = false
+				break
+			}
+		}
+		if !canEnterRoom {
+			continue
+		}
+
 		// check the way is clear to the room
 		// #############
 		// #01.2.3.4.56#
@@ -231,24 +249,12 @@ func getPossibleMoves(state State) []Move {
 			continue
 		}
 
-		// check the room can be entered
-		canEnterRoom := true
-		for i, roomSpot := range state.rooms[destinationRoom] {
-			if i == 0 && roomSpot != "." {
-				canEnterRoom = false
-				break
-			} else if !(roomSpot == "." || roomSpot == amphipod) {
-				canEnterRoom = false
-				break
-			}
-		}
-		if !canEnterRoom {
-			continue
-		}
-
 		// add move into bottom of room
-		for depth, roomSpot := range state.rooms[destinationRoom] {
-			if roomSpot == "." && depth+1 < len(state.rooms[destinationRoom]) && state.rooms[destinationRoom][depth+1] == amphipod {
+		for depth := len(state.rooms[destinationRoom]) - 1; depth >= 0; depth-- {
+			roomSpot := state.rooms[destinationRoom][depth]
+			if roomSpot == amphipod {
+				continue
+			} else {
 				var from, to Pos
 				from.inHallway = true
 				from.hallwayPos = start
@@ -256,36 +262,152 @@ func getPossibleMoves(state State) []Move {
 				to.roomNum = destinationRoom
 				to.roomDepth = depth
 				moves = append(moves, Move{from, to})
+				break
 			}
-			break
 		}
 	}
 
 	// room to hallway
+	for roomNum := 0; roomNum < 4; roomNum++ {
+		for depth := 0; depth < len(state.rooms[roomNum]); depth++ {
+			if amphipod := state.rooms[roomNum][depth]; amphipod != "." {
+				// move left through hallway
+				for hallwayPos := roomNum + 1; hallwayPos >= 0; hallwayPos-- {
+					if state.hallway[hallwayPos] != "." {
+						break
+					} else {
+						var from, to Pos
+						from.inHallway = false
+						from.roomNum = roomNum
+						from.roomDepth = depth
+						to.inHallway = true
+						to.hallwayPos = hallwayPos
+						moves = append(moves, Move{from, to})
+					}
+				}
+				// move right through hallway
+				for hallwayPos := roomNum + 2; hallwayPos < 7; hallwayPos++ {
+					if state.hallway[hallwayPos] != "." {
+						break
+					} else {
+						var from, to Pos
+						from.inHallway = false
+						from.roomNum = roomNum
+						from.roomDepth = depth
+						to.inHallway = true
+						to.hallwayPos = hallwayPos
+						moves = append(moves, Move{from, to})
+					}
+				}
+				break
+			}
+		}
+	}
 
 	// room to room
+	for startRoomNum := 0; startRoomNum < 4; startRoomNum++ {
+		for depth := 0; depth < len(state.rooms[startRoomNum]); depth++ {
+			if amphipod := state.rooms[startRoomNum][depth]; amphipod != "." {
+				destinationRoom := map[string]int{
+					"A": 0,
+					"B": 1,
+					"C": 2,
+					"D": 3,
+				}[amphipod]
+
+				if startRoomNum == destinationRoom {
+					break
+				}
+
+				// check the room can be entered
+				canEnterRoom := true
+				for i, roomSpot := range state.rooms[destinationRoom] {
+					if i == 0 && roomSpot != "." {
+						canEnterRoom = false
+						break
+					} else if !(roomSpot == "." || roomSpot == amphipod) {
+						canEnterRoom = false
+						break
+					}
+				}
+				if !canEnterRoom {
+					continue
+				}
+
+				// check the way is clear to the room
+				// #############
+				// #01.2.3.4.56#
+				//    0 1 2 3
+				// ###A#C#B#B###
+				//   #D#D#A#C#
+				//   #########
+				canGetToRoom := true
+				if startRoomNum > destinationRoom {
+					// startRoomNum is to the right of destinationRoom
+					for between := startRoomNum + 1; between >= destinationRoom+2; between-- {
+						if state.hallway[between] != "." {
+							canGetToRoom = false
+							break
+						}
+					}
+				} else {
+					// startRoomNum is to the left of destinationRoom
+					for between := startRoomNum + 2; between <= destinationRoom+1; between++ {
+						if state.hallway[between] != "." {
+							canGetToRoom = false
+							break
+						}
+					}
+				}
+				if !canGetToRoom {
+					continue
+				}
+
+				// add move into bottom of room
+				for endDepth := len(state.rooms[destinationRoom]) - 1; endDepth >= 0; endDepth-- {
+					roomSpot := state.rooms[destinationRoom][endDepth]
+					if roomSpot == amphipod {
+						continue
+					} else {
+						var from, to Pos
+						from.inHallway = false
+						from.roomNum = startRoomNum
+						from.roomDepth = depth
+						to.inHallway = false
+						to.roomNum = destinationRoom
+						to.roomDepth = endDepth
+						moves = append(moves, Move{from, to})
+						break
+					}
+				}
+			}
+		}
+	}
 
 	return moves
 }
 
-func getMinEnergy(state State, energyMap EnergyMap, memo MinEnergyMemo) int {
+func getMinEnergy(state State, energyMap EnergyMap, prevStates map[State]bool, memo MinEnergyMemo) int {
 	if v, exists := memo[state]; exists {
 		return v
 	}
 
 	if state.IsOrganized() {
+		state.Print()
 		memo[state] = 0
 		return 0
 	}
 
 	possibleMoves := getPossibleMoves(state)
-	fmt.Println(possibleMoves)
 	minEnergy := math.MaxInt64
 	for _, move := range possibleMoves {
 		newState := moveState(state, move)
-		energyUsedInMove := energyForMove(state, move, energyMap)
-		if minEnergyFromNewState := getMinEnergy(newState, energyMap, memo); minEnergyFromNewState < minEnergy {
-			minEnergy = minEnergyFromNewState + energyUsedInMove
+		if _, exists := prevStates[newState]; !exists {
+			prevStates[newState] = true
+			energyUsedInMove := energyForMove(state, move, energyMap)
+			if minEnergyFromNewState := getMinEnergy(newState, energyMap, prevStates, memo); minEnergyFromNewState < minEnergy {
+				minEnergy = minEnergyFromNewState + energyUsedInMove
+			}
 		}
 	}
 
@@ -297,7 +419,8 @@ func p1(initialState State) int {
 	defer common.Time()()
 	energyMap := getEnergyMap()
 	minEnergyMemo := make(MinEnergyMemo)
-	return getMinEnergy(initialState, energyMap, minEnergyMemo)
+	prevStates := make(map[State]bool)
+	return getMinEnergy(initialState, energyMap, prevStates, minEnergyMemo)
 }
 
 func p2(initialState State) int {
