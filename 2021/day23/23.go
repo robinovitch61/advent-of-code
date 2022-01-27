@@ -7,11 +7,6 @@ import (
 	"strings"
 )
 
-type State struct {
-	hallway [7]string
-	rooms   [4][2]string
-}
-
 type EnergyMap map[string]int
 
 type MinEnergyMemo map[State]int
@@ -21,13 +16,29 @@ type Pos struct {
 	hallwayPos, roomNum, roomDepth int
 }
 
+func (p Pos) Print() {
+	fmt.Println("inHallway:", p.inHallway, "hallwayPos:", p.hallwayPos, "roomNum:", p.roomNum, "roomDepth:", p.roomDepth)
+}
+
 type Move struct {
 	from, to Pos
 }
 
+func (m Move) Print() {
+	fmt.Print("From ")
+	m.from.Print()
+	fmt.Print("To   ")
+	m.to.Print()
+}
+
+type State struct {
+	hallway [7]string
+	rooms   [4][2]string
+}
+
 func (s State) Print() {
 	fmt.Println("#############")
-	fmt.Println("#" + strings.Join(s.hallway[:2], "") + "." + s.hallway[3] + "." + s.hallway[4] + "." + s.hallway[5] + "." + strings.Join(s.hallway[5:], "") + "#")
+	fmt.Println("#" + strings.Join(s.hallway[:2], "") + "." + s.hallway[2] + "." + s.hallway[3] + "." + s.hallway[4] + "." + strings.Join(s.hallway[5:], "") + "#")
 	fmt.Println("###" + s.rooms[0][0] + "#" + s.rooms[1][0] + "#" + s.rooms[2][0] + "#" + s.rooms[3][0] + "###")
 	fmt.Println("  #" + s.rooms[0][1] + "#" + s.rooms[1][1] + "#" + s.rooms[2][1] + "#" + s.rooms[3][1] + "#  ")
 	fmt.Println("  #########  ")
@@ -271,6 +282,27 @@ func getPossibleMoves(state State) []Move {
 	for roomNum := 0; roomNum < 4; roomNum++ {
 		for depth := 0; depth < len(state.rooms[roomNum]); depth++ {
 			if amphipod := state.rooms[roomNum][depth]; amphipod != "." {
+				destinationRoom := map[string]int{
+					"A": 0,
+					"B": 1,
+					"C": 2,
+					"D": 3,
+				}[amphipod]
+
+				// don't move out of the room if you and everything behind you is where it's supposed to be
+				if roomNum == destinationRoom {
+					behindSorted := true
+					for d := depth + 1; d < len(state.rooms[roomNum]); d++ {
+						if state.rooms[roomNum][d] != amphipod {
+							behindSorted = false
+							break
+						}
+					}
+					if behindSorted {
+						break
+					}
+				}
+
 				// move left through hallway
 				for hallwayPos := roomNum + 1; hallwayPos >= 0; hallwayPos-- {
 					if state.hallway[hallwayPos] != "." {
@@ -285,6 +317,7 @@ func getPossibleMoves(state State) []Move {
 						moves = append(moves, Move{from, to})
 					}
 				}
+
 				// move right through hallway
 				for hallwayPos := roomNum + 2; hallwayPos < 7; hallwayPos++ {
 					if state.hallway[hallwayPos] != "." {
@@ -387,27 +420,36 @@ func getPossibleMoves(state State) []Move {
 	return moves
 }
 
-func getMinEnergy(state State, energyMap EnergyMap, prevStates map[State]bool, memo MinEnergyMemo) int {
+func getMinEnergy(state State, energyMap EnergyMap, memo MinEnergyMemo, prevStates []State, prevMoves []Move, prevPossible [][]Move) int {
 	if v, exists := memo[state]; exists {
 		return v
 	}
 
 	if state.IsOrganized() {
+		for i := 0; i < len(prevStates); i++ {
+			prevMoves[i].Print()
+			prevStates[i].Print()
+			for _, p := range prevPossible[i] {
+				p.Print()
+				//fmt.Println(numSteps(prevStates[i]))
+				fmt.Println()
+			}
+			fmt.Println()
+		}
 		state.Print()
 		memo[state] = 0
 		return 0
 	}
 
 	possibleMoves := getPossibleMoves(state)
-	minEnergy := math.MaxInt64
+	minEnergy := int(1e9)
+
 	for _, move := range possibleMoves {
 		newState := moveState(state, move)
-		if _, exists := prevStates[newState]; !exists {
-			prevStates[newState] = true
-			energyUsedInMove := energyForMove(state, move, energyMap)
-			if minEnergyFromNewState := getMinEnergy(newState, energyMap, prevStates, memo); minEnergyFromNewState < minEnergy {
-				minEnergy = minEnergyFromNewState + energyUsedInMove
-			}
+		energyUsedInMove := energyForMove(state, move, energyMap)
+		minEnergyFromNewState := getMinEnergy(newState, energyMap, memo, append(prevStates, newState), append(prevMoves, move), append(prevPossible, possibleMoves))
+		if minEnergyFromNewState+energyUsedInMove < minEnergy {
+			minEnergy = minEnergyFromNewState + energyUsedInMove
 		}
 	}
 
@@ -419,8 +461,10 @@ func p1(initialState State) int {
 	defer common.Time()()
 	energyMap := getEnergyMap()
 	minEnergyMemo := make(MinEnergyMemo)
-	prevStates := make(map[State]bool)
-	return getMinEnergy(initialState, energyMap, prevStates, minEnergyMemo)
+	prevStates := []State{initialState}
+	prevMoves := []Move{{}}
+	prevPossible := [][]Move{{}}
+	return getMinEnergy(initialState, energyMap, minEnergyMemo, prevStates, prevMoves, prevPossible)
 }
 
 func p2(initialState State) int {
