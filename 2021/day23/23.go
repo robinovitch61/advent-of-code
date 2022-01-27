@@ -33,7 +33,7 @@ func (m Move) Print() {
 
 type State struct {
 	hallway [7]string
-	rooms   [4][2]string
+	rooms   [4][4]string
 }
 
 func (s State) Print() {
@@ -65,8 +65,8 @@ func parseInput(input []string) State {
 	for i, pos := range []int{1, 2, 4, 6, 8, 10, 11} {
 		hallway[i] = string(hallwayString[pos])
 	}
-	var rooms [4][2]string
-	for i, roomString := range input[2:4] {
+	var rooms [4][4]string
+	for i, roomString := range input[2:6] {
 		rooms[0][i] = string(roomString[3])
 		rooms[1][i] = string(roomString[5])
 		rooms[2][i] = string(roomString[7])
