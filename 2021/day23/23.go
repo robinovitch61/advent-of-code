@@ -4,7 +4,6 @@ import (
 	"aoc/common"
 	"fmt"
 	"math"
-	"strings"
 )
 
 type EnergyMap map[string]int
@@ -16,32 +15,13 @@ type Pos struct {
 	hallwayPos, roomNum, roomDepth int
 }
 
-func (p Pos) Print() {
-	fmt.Println("inHallway:", p.inHallway, "hallwayPos:", p.hallwayPos, "roomNum:", p.roomNum, "roomDepth:", p.roomDepth)
-}
-
 type Move struct {
 	from, to Pos
-}
-
-func (m Move) Print() {
-	fmt.Print("From ")
-	m.from.Print()
-	fmt.Print("To   ")
-	m.to.Print()
 }
 
 type State struct {
 	hallway [7]string
 	rooms   [4][4]string
-}
-
-func (s State) Print() {
-	fmt.Println("#############")
-	fmt.Println("#" + strings.Join(s.hallway[:2], "") + "." + s.hallway[2] + "." + s.hallway[3] + "." + s.hallway[4] + "." + strings.Join(s.hallway[5:], "") + "#")
-	fmt.Println("###" + s.rooms[0][0] + "#" + s.rooms[1][0] + "#" + s.rooms[2][0] + "#" + s.rooms[3][0] + "###")
-	fmt.Println("  #" + s.rooms[0][1] + "#" + s.rooms[1][1] + "#" + s.rooms[2][1] + "#" + s.rooms[3][1] + "#  ")
-	fmt.Println("  #########  ")
 }
 
 func (s State) IsOrganized() bool {
@@ -146,7 +126,7 @@ func moveState(state State, move Move) State {
 	return newState
 }
 
-func numSteps(state State, move Move) int {
+func numSteps(move Move) int {
 	if move.from.inHallway && move.to.inHallway {
 		return int(math.Abs(float64(move.from.hallwayPos - move.to.hallwayPos)))
 	} else if !move.from.inHallway && !move.to.inHallway {
@@ -170,7 +150,7 @@ func energyForMove(state State, move Move, energyMap EnergyMap) int {
 		movedAmphipod = state.rooms[move.from.roomNum][move.from.roomDepth]
 	}
 	energyPerStep := energyMap[movedAmphipod]
-	return energyPerStep * numSteps(state, move)
+	return energyPerStep * numSteps(move)
 }
 
 func getPossibleMoves(state State) []Move {
@@ -426,24 +406,12 @@ func getMinEnergy(state State, energyMap EnergyMap, memo MinEnergyMemo, prevStat
 	}
 
 	if state.IsOrganized() {
-		for i := 0; i < len(prevStates); i++ {
-			prevMoves[i].Print()
-			prevStates[i].Print()
-			for _, p := range prevPossible[i] {
-				p.Print()
-				//fmt.Println(numSteps(prevStates[i]))
-				fmt.Println()
-			}
-			fmt.Println()
-		}
-		state.Print()
 		memo[state] = 0
 		return 0
 	}
 
 	possibleMoves := getPossibleMoves(state)
 	minEnergy := int(1e9)
-
 	for _, move := range possibleMoves {
 		newState := moveState(state, move)
 		energyUsedInMove := energyForMove(state, move, energyMap)
@@ -458,6 +426,7 @@ func getMinEnergy(state State, energyMap EnergyMap, memo MinEnergyMemo, prevStat
 }
 
 func p1(initialState State) int {
+	// just manually changed some stuff for part 2, see the git diff
 	defer common.Time()()
 	energyMap := getEnergyMap()
 	minEnergyMemo := make(MinEnergyMemo)
@@ -467,17 +436,9 @@ func p1(initialState State) int {
 	return getMinEnergy(initialState, energyMap, minEnergyMemo, prevStates, prevMoves, prevPossible)
 }
 
-func p2(initialState State) int {
-	defer common.Time()()
-	return -1
-}
-
 func Run() {
 	common.PrintDay(23)
 	input := common.ReadFile("23")
 	initialState := parseInput(input)
-	initialState.Print()
-	fmt.Println(initialState.IsOrganized())
 	fmt.Println(p1(initialState))
-	//fmt.Println(p2(initialState))
 }
