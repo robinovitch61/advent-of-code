@@ -121,6 +121,8 @@ func Run() {
 	common.PrintDay(24)
 	input := common.ReadFile("24")
 	puzzleInput := parseInput(input)
-	fmt.Println(p1(puzzleInput))
+	fmt.Println("99999999999999 =", runProgram(99999999999999, make(Registers), puzzleInput)["z"])
+	fmt.Println("11111111111111 =", runProgram(11111111111111, make(Registers), puzzleInput)["z"])
+	//fmt.Println(p1(puzzleInput))
 	//fmt.Println(p2(puzzleInput))
 }
