@@ -1,6 +1,3 @@
-import sys
-
-
 def filename(day):
     return f"./inputs/{str(day).zfill(2)}.txt"
 
