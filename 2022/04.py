@@ -8,22 +8,16 @@ PUZZLE = common.string(4)
 # first solution was a lot less clean, involved ranges and any/all
 # REMEMBER TO CONVERT STRINGS TO INTS YA SILLY LEO
 
+def sum_condition(puzzle, f):
+    return sum(f(*(int(n) for n in re.findall(r"\d+", line))) for line in puzzle.split())
+
+
 def first(puzzle):
-    res = 0
-    for line in puzzle.split():
-        a, b, c, d = (int(n) for n in re.findall(r"\d+", line))
-        if a <= c and b >= d or a >= c and b <= d:
-            res += 1
-    return res
+    return sum_condition(puzzle, lambda a, b, c, d: a <= c and b >= d or a >= c and b <= d)
 
 
 def second(puzzle):
-    res = 0
-    for line in puzzle.split():
-        a, b, c, d = (int(n) for n in re.findall(r"\d+", line))
-        if max(a, c) <= min(b, d):
-            res += 1
-    return res
+    return sum_condition(puzzle, lambda a, b, c, d: max(a, c) <= min(b, d))
 
 
 TEST_PUZZLE = """2-4,6-8
