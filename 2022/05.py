@@ -19,20 +19,16 @@ move 1 from 1 to 2
 def parse(puzzle):
     stack, moves = puzzle.split("\n\n")
 
-    # parse stacks into lists
     stack_lines = stack.split("\n")
     stacks = []
-    for i in range(0, len(stack_lines[-1]), 4):
-        new_stack = list(reversed([l[i:i + 4].replace("[", "").replace("]", "").strip() for l in stack_lines[:-1]]))
-        new_stack = [s for s in new_stack if s != ""]
-        stacks.append(new_stack)
+    for i in range(1, len(stack_lines[-1]), 4):
+        new_stack = list(reversed([l[i] for l in stack_lines[:-1]]))
+        stacks.append([s for s in new_stack if s.strip() != ""])
 
-    # parse moves
-    parsed_moves = []
-    for m in moves.split("\n"):
-        parsed = tuple(int(n) for n in re.findall(r"\d+", m))
-        if len(parsed) == 3:
-            parsed_moves.append(parsed)
+    parsed_moves = [
+        tuple(int(n) for n in re.findall(r"\d+", m))
+        for m in moves.split("\n")[:-1]
+    ]
 
     return stacks, parsed_moves
 
@@ -70,6 +66,8 @@ def second(puzzle):
 def test():
     assert first(TEST_PUZZLE) == "CMZ"
     assert second(TEST_PUZZLE) == "MCD"
+    assert first(PUZZLE) == "DHBJQJCCW"
+    assert second(PUZZLE) == "WJVRLSJJT"
 
 
 if __name__ == "__main__":
