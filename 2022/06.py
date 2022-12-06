@@ -2,16 +2,13 @@ import common
 
 PUZZLE = common.string(6)
 
-TEST_PUZZLE = """
-"""
-
 
 def solve(puzzle, n):
     l, r = 0, n
     while r <= len(puzzle):
         if len(set(puzzle[l:r])) == n:
             return r
-        l, r = l+1, r+1
+        l, r = l + 1, r + 1
 
 
 def first(puzzle):
@@ -20,6 +17,7 @@ def first(puzzle):
 
 def second(puzzle):
     return solve(puzzle, 14)
+
 
 # `pytest *`
 def test():
