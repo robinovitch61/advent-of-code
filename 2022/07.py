@@ -56,29 +56,32 @@ def generate_filetree(puzzle):
     lines = puzzle.split("\n")[1:-1]
     i = 0
     while i < len(lines):
-        if lines[i] == "$ ls":
-            while i + 1 < len(lines) and not lines[i + 1].startswith("$"):
-                i += 1
-                if lines[i].startswith("dir"):
-                    _, dirname = lines[i].split(" ")
-                    current.children.append(Dir(dirname, current, [], []))
-                else:
-                    s, fname = lines[i].split(" ")
-                    current.files.append(MyFile(int(s), fname))
-        elif lines[i].strip() == "$ cd ..":
-            current = current.parent
-        else:  # cd somewhere
-            dirname = lines[i].split(" ")[-1]
-            current = [c for c in current.children if c.name == dirname][0]
+        i, current = process_line(i, lines, current)
         i += 1
     return top
 
 
-def dir_size(curr):
-    res = sum(dir_size(c) for c in curr.children)
-    if not len(curr.files):
-        return res
-    return sum([f.size for f in curr.files]) + res
+def process_line(i, lines, current):
+    if lines[i] == "$ ls":
+        while i + 1 < len(lines) and not lines[i + 1].startswith("$"):
+            i += 1
+            current = process_output(lines[i], current)
+    elif lines[i] == "$ cd ..":
+        current = current.parent
+    else:  # cd somewhere
+        dirname = lines[i].split(" ")[-1]
+        current = next(c for c in current.children if c.name == dirname)
+    return i, current
+
+
+def process_output(line, current):
+    if line.startswith("dir"):
+        _, dirname = line.split(" ")
+        current.children.append(Dir(dirname, current, [], []))
+    else:
+        s, fname = line.split(" ")
+        current.files.append(MyFile(int(s), fname))
+    return current
 
 
 def get_all_dir_sizes(top):
@@ -89,6 +92,13 @@ def get_all_dir_sizes(top):
         return prev
 
     return get_dir_sizes(top)
+
+
+def dir_size(curr):
+    res = sum(dir_size(c) for c in curr.children)
+    if not len(curr.files):
+        return res
+    return sum([f.size for f in curr.files]) + res
 
 
 @functools.lru_cache(maxsize=None)
