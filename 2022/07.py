@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import functools
+from dataclasses import dataclass
+from typing import Optional, List
 
 import common
 
@@ -30,21 +34,21 @@ $ ls
 """
 
 
+@dataclass
 class Dir:
-    def __init__(self, name, parent, children, files):
-        self.name = name
-        self.parent = parent
-        self.children = children
-        self.files = files
+    name: str
+    parent: Optional[Dir]
+    children: List[Dir]
+    files: List[MyFile]
 
     def __repr__(self):
-        return f"Dir({self.name}, {self.parent.name if self.parent is not None else 'NONE'}, {self.children}, {self.files})"
+        return f"Dir({self.name}, {self.parent.name if self.parent is not None else ''}, {self.children}, {self.files})"
 
 
+@dataclass
 class MyFile:
-    def __init__(self, size, name):
-        self.size = size
-        self.name = name
+    size: int
+    self: str
 
     def __repr__(self):
         return f"MyFile({self.size}, {self.name})"
