@@ -39,19 +39,10 @@ class Dir:
     name: str
     parent: Optional[Dir]
     children: List[Dir]
-    files: List[MyFile]
+    file_sizes: List[int]
 
     def __repr__(self):
-        return f"Dir({self.name}, {self.parent.name if self.parent is not None else ''}, {self.children}, {self.files})"
-
-
-@dataclass
-class MyFile:
-    size: int
-    self: str
-
-    def __repr__(self):
-        return f"MyFile({self.size}, {self.name})"
+        return f"Dir({self.name}, {self.parent.name if self.parent is not None else ''}, {self.children}, {self.file_sizes})"
 
 
 def generate_filetree(puzzle):
@@ -84,7 +75,7 @@ def process_output(line, current):
         current.children.append(Dir(dirname, current, [], []))
     else:
         s, fname = line.split(" ")
-        current.files.append(MyFile(int(s), fname))
+        current.file_sizes.append(int(s))
     return current
 
 
@@ -100,7 +91,7 @@ def get_all_dir_sizes(top):
 
 def dir_size(curr):
     child_dir_sizes = sum(dir_size(c) for c in curr.children)
-    return sum(f.size for f in curr.files) + child_dir_sizes
+    return sum(f for f in curr.file_sizes) + child_dir_sizes
 
 
 @functools.lru_cache(maxsize=None)
