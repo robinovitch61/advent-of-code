@@ -118,9 +118,7 @@ def second(puzzle):
     tree, all_dir_sizes = get_tree_and_dir_sizes(puzzle)
     total = dir_size(tree)
     reqd = 30000000 - (70000000 - total)
-    for d in sorted(all_dir_sizes):
-        if d > reqd:
-            return d
+    return next(d for d in sorted(all_dir_sizes) if d > reqd)
 
 
 # `pytest *`
