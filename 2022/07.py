@@ -82,16 +82,13 @@ def dir_size(curr):
 
 
 def get_all_dir_sizes(top):
-    all_dirs = []
-
-    def traverse_tree(curr):
-        dsize = dir_size(curr)
-        all_dirs.append(dsize)
+    def get_dir_sizes(curr, prev=()):
+        prev += (dir_size(curr),)
         for child in curr.children:
-            traverse_tree(child)
+            prev = get_dir_sizes(child, prev)
+        return prev
 
-    traverse_tree(top)
-    return all_dirs
+    return get_dir_sizes(top)
 
 
 @functools.lru_cache(maxsize=None)
