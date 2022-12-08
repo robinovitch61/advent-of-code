@@ -1,4 +1,4 @@
-from __future__ import annotations
+import math
 
 import common
 
@@ -60,25 +60,16 @@ def view_dist(trees, x, y, dx, dy):
 
 
 def scenic_score(trees, x, y):
-    return (
-        view_dist(trees, x, y, 1, 0)
-        * view_dist(trees, x, y, -1, 0)
-        * view_dist(trees, x, y, 0, 1)
-        * view_dist(trees, x, y, 0, -1)
+    return math.prod(
+        view_dist(trees, x, y, dx, dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
     )
 
 
 def second(puzzle):
     trees = parse(puzzle)
     w, h = len(trees[0]), len(trees)
-    max_scenic_score = 0
-    for x in range(1, w - 1):
-        for y in range(1, h - 1):
-            max_scenic_score = max(
-                max_scenic_score,
-                scenic_score(trees, x, y)
-            )
-    return max_scenic_score
+    scenic_scores = [scenic_score(trees, x, y) for x in range(1, w - 1) for y in range(1, h - 1)]
+    return max(scenic_scores)
 
 
 # `pytest *`
