@@ -16,34 +16,21 @@ def parse(puzzle):
     return [[int(n) for n in line] for line in puzzle.split("\n") if len(line)]
 
 
-def peek(trees, visible, x, y, dx, dy):
-    w, h = len(trees[0]), len(trees)
-    max_height = trees[y][x]
-    x, y = x + dx, y + dy
-    while 0 <= x < w and 0 <= y < h:
-        if trees[y][x] > max_height:
-            visible[y][x] = True
-        max_height = max(trees[y][x], max_height)
-        x, y = x + dx, y + dy
-    return visible
-
-
 def first(puzzle):
     trees = parse(puzzle)
     w, h = len(trees[0]), len(trees)
-    visible = [
-        [
-            True if i == 0 or i == w - 1 or j == 0 or j == h - 1 else False
-            for i, _ in enumerate(range(w))
-        ] for j, _ in enumerate(range(h))
-    ]
-    for i in range(1, w - 1):
-        visible = peek(trees, visible, i, 0, 0, 1)  # top
-        visible = peek(trees, visible, i, h - 1, 0, -1)  # bottom
-    for j in range(1, h - 1):
-        visible = peek(trees, visible, 0, j, 1, 0)  # left
-        visible = peek(trees, visible, w - 1, j, -1, 0)  # right
-    return sum(sum(l) for l in visible)
+    visible = 0
+    for x in range(0, w):
+        for y in range(0, h):
+            tree_height = trees[y][x]
+            if any([
+                all(trees[y][v] < tree_height for v in range(0, x)),  # left
+                all(trees[y][v] < tree_height for v in range(x + 1, w)),  # right
+                all(trees[v][x] < tree_height for v in range(0, y)),  # top
+                all(trees[v][x] < tree_height for v in range(y + 1, h)),  # bottom
+            ]):
+                visible += 1
+    return visible
 
 
 def view_dist(trees, x, y, dx, dy):
