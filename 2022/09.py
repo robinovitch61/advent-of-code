@@ -60,27 +60,16 @@ def move_rope(direction, rope):
 
 
 def follow(h, t):
-    # close enough
-    if abs(t[0] - h[0]) < 2 and abs(t[1] - h[1]) < 2:
+    d = (h[0] - t[0], h[1] - t[1])
+    if abs(d[0]) < 2 and abs(d[1]) < 2:
         return t
-    # diagonal
-    elif abs(t[0] - h[0]) == 2 and abs(t[1] - h[1]) == 2:
-        return (
-            h[0] - 1 if t[0] < h[0] else h[0] + 1,
-            h[1] - 1 if t[1] < h[1] else h[1] + 1
-        )
-    # above or below
-    elif abs(t[1] - h[1]) == 2:
-        return (
-            h[0],
-            h[1] - 1 if t[1] < h[1] else h[1] + 1
-        )
-    # left or right
-    elif abs(t[0] - h[0]) == 2:
-        return (
-            h[0] - 1 if t[0] < h[0] else h[0] + 1,
-            h[1]
-        )
+    return t[0] + sign(d[0]), t[1] + sign(d[1])
+
+
+def sign(x):
+    if x == 0:
+        return 0
+    return 1 if x > 0 else -1
 
 
 # `pytest *`
