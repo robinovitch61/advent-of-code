@@ -31,75 +31,22 @@ delta = {
 }
 
 
-def move(direction, h, t):
-    h = tuple(sum(t) for t in zip(h, delta[direction]))
-    # tail up and left diagonally
-    if t[1] - h[1] == 2 and h[0] - t[0] == 2:
-        t = (h[0] - 1, h[1] + 1)
-    # tail up and right diagonally
-    if t[1] - h[1] == 2 and t[0] - h[0] == 2:
-        t = (h[0] + 1, h[1] + 1)
-    # tail down and left diagonally
-    if h[1] - t[1] == 2 and h[0] - t[0] == 2:
-        t = (h[0] - 1, h[1] - 1)
-    # tail down and right diagonally
-    if h[1] - t[1] == 2 and t[0] - h[0] == 2:
-        t = (h[0] + 1, h[1] - 1)
-    # tail two above
-    if t[1] - h[1] == 2:
-        t = (h[0], h[1] + 1)
-    # tail two below
-    if h[1] - t[1] == 2:
-        t = (h[0], h[1] - 1)
-    # tail two left
-    if h[0] - t[0] == 2:
-        t = (h[0] - 1, h[1])
-    # tail two right
-    if t[0] - h[0] == 2:
-        t = (h[0] + 1, h[1])
-    return h, t
-
-
 def first(puzzle):
-    h, t = (0, 0), (0, 0)
-    tails = set()
-    for l in puzzle.split("\n")[:-1]:
-        direction, count = l.split(" ")
-        for _ in range(int(count)):
-            h, t = move(direction, h, t)
-            tails.add(t)
-    return len(tails)
-
-
-def print_rope(rope):
-    min_x = min(x[0] for x in rope)
-    max_x = max(x[0] for x in rope)
-    min_y = min(x[1] for x in rope)
-    max_y = max(x[1] for x in rope)
-    lines = []
-    for i in range(min_y, max_y + 1):
-        line = ""
-        for j in range(min_x, max_x + 1):
-            if (j, i) in rope:
-                line += str(rope.index((j, i)))
-            else:
-                line += "."
-        lines.append(line)
-    for line in reversed(lines):
-        print(line)
-    print()
+    return unique_tails_in_rope(puzzle, 2)
 
 
 def second(puzzle):
-    rope = [(0, 0) for _ in range(10)]
+    return unique_tails_in_rope(puzzle, 10)
+
+
+def unique_tails_in_rope(puzzle, rope_length):
+    rope = [(0, 0) for _ in range(rope_length)]
     tails = set()
-    print_rope(rope)
     for l in puzzle.split("\n")[:-1]:
         direction, count = l.split(" ")
         for _ in range(int(count)):
             rope = move_rope(direction, rope)
             tails.add(rope[-1])
-        print_rope(rope)
     return len(tails)
 
 
@@ -114,6 +61,43 @@ def move_rope(direction, rope):
         h, t = move("-", prev_h, prev_t)
         rope[i], rope[i + 1] = h, t
     return rope
+
+
+def move(direction, h, t):
+    d = delta[direction]
+    h = (h[0] + d[0], h[1] + d[1])
+
+    # tail two above
+    if t[1] - h[1] == 2:
+        # tail left diagonally
+        if h[0] - t[0] == 2:
+            t = (h[0] - 1, h[1] + 1)
+        # tail right diagonally
+        elif t[0] - h[0] == 2:
+            t = (h[0] + 1, h[1] + 1)
+        else:
+            t = (h[0], h[1] + 1)
+
+    # tail two below
+    if h[1] - t[1] == 2:
+        # tail left diagonally
+        if h[0] - t[0] == 2:
+            t = (h[0] - 1, h[1] - 1)
+        # tail right diagonally
+        elif t[0] - h[0] == 2:
+            t = (h[0] + 1, h[1] - 1)
+        else:
+            t = (h[0], h[1] - 1)
+
+    # tail two left
+    if h[0] - t[0] == 2:
+        t = (h[0] - 1, h[1])
+
+    # tail two right
+    if t[0] - h[0] == 2:
+        t = (h[0] + 1, h[1])
+
+    return h, t
 
 
 # `pytest *`
