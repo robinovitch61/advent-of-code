@@ -27,7 +27,6 @@ delta = {
     "D": (0, -1),
     "L": (-1, 0),
     "R": (1, 0),
-    "-": (0, 0),
 }
 
 
@@ -52,52 +51,36 @@ def unique_tails_in_rope(puzzle, rope_length):
 
 def move_rope(direction, rope):
     # move head
-    prev_h, prev_t = rope[0], rope[1]
-    h, t = move(direction, prev_h, prev_t)
-    rope[0], rope[1] = h, t
-    # adjust rest
-    for i in range(1, len(rope) - 1):
-        prev_h, prev_t = rope[i], rope[i + 1]
-        h, t = move("-", prev_h, prev_t)
-        rope[i], rope[i + 1] = h, t
+    d, h = delta[direction], rope[0]
+    rope[0] = (h[0] + d[0], h[1] + d[1])
+    # adjust tail
+    for i in range(0, len(rope) - 1):
+        rope[i + 1] = follow(rope[i], rope[i + 1])
     return rope
 
 
-def move(direction, h, t):
-    d = delta[direction]
-    h = (h[0] + d[0], h[1] + d[1])
-
-    # tail two above
-    if t[1] - h[1] == 2:
-        # tail left diagonally
-        if h[0] - t[0] == 2:
-            t = (h[0] - 1, h[1] + 1)
-        # tail right diagonally
-        elif t[0] - h[0] == 2:
-            t = (h[0] + 1, h[1] + 1)
-        else:
-            t = (h[0], h[1] + 1)
-
-    # tail two below
-    if h[1] - t[1] == 2:
-        # tail left diagonally
-        if h[0] - t[0] == 2:
-            t = (h[0] - 1, h[1] - 1)
-        # tail right diagonally
-        elif t[0] - h[0] == 2:
-            t = (h[0] + 1, h[1] - 1)
-        else:
-            t = (h[0], h[1] - 1)
-
-    # tail two left
-    if h[0] - t[0] == 2:
-        t = (h[0] - 1, h[1])
-
-    # tail two right
-    if t[0] - h[0] == 2:
-        t = (h[0] + 1, h[1])
-
-    return h, t
+def follow(h, t):
+    # close enough
+    if abs(t[0] - h[0]) < 2 and abs(t[1] - h[1]) < 2:
+        return t
+    # diagonal
+    elif abs(t[0] - h[0]) == 2 and abs(t[1] - h[1]) == 2:
+        return (
+            h[0] - 1 if t[0] < h[0] else h[0] + 1,
+            h[1] - 1 if t[1] < h[1] else h[1] + 1
+        )
+    # above or below
+    elif abs(t[1] - h[1]) == 2:
+        return (
+            h[0],
+            h[1] - 1 if t[1] < h[1] else h[1] + 1
+        )
+    # left or right
+    elif abs(t[0] - h[0]) == 2:
+        return (
+            h[0] - 1 if t[0] < h[0] else h[0] + 1,
+            h[1]
+        )
 
 
 # `pytest *`
