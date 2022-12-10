@@ -1,5 +1,4 @@
 import re
-from collections import deque
 
 import common
 
@@ -7,29 +6,16 @@ PUZZLE = common.string(10)
 
 
 def get_x_vals(puzzle):
-    ops = deque(l for l in puzzle.split("\n") if len(l))
-    current_op = None
     x = 1
     cycle_to_x = {}
     cycle = 0
-    while len(ops) or current_op is not None:
+    for op in puzzle.split("\n")[:-1]:
         cycle += 1
-        # start
-        if current_op is None and len(ops):
-            op = ops.popleft()
-            if op.startswith("addx"):
-                n = next(int(n) for n in re.findall(r"-?\d+", op))
-                current_op = (n, 1)
-        # during
         cycle_to_x[cycle] = x
-        # after
-        if current_op:
-            val, delay = current_op
-            if delay == 0:
-                x += val
-                current_op = None
-            else:
-                current_op = (val, delay-1)
+        if op.startswith("addx"):
+            cycle += 1
+            cycle_to_x[cycle] = x
+            x += next(int(n) for n in re.findall(r"-?\d+", op))
     return cycle_to_x
 
 
