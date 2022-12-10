@@ -6,33 +6,25 @@ PUZZLE = common.string(10)
 
 
 def get_x_vals(puzzle):
-    x = 1
-    cycle_to_x = {}
-    cycle = 0
+    x, xs = 1, []
     for op in puzzle.split("\n")[:-1]:
-        cycle += 1
-        cycle_to_x[cycle] = x
+        xs.append(x)
         if op.startswith("addx"):
-            cycle += 1
-            cycle_to_x[cycle] = x
+            xs.append(x)
             x += next(int(n) for n in re.findall(r"-?\d+", op))
-    return cycle_to_x
+    return xs
 
 
 def first(puzzle):
-    cycle_to_x = get_x_vals(puzzle)
-    return sum(cycle * x for cycle, x in cycle_to_x.items() if (cycle - 20) % 40 == 0)
+    return sum((i + 1) * x for i, x in enumerate(get_x_vals(puzzle)) if ((i + 1) - 20) % 40 == 0)
 
 
 def second(puzzle):
-    cycle_to_x = get_x_vals(puzzle)
-    screen = [["." for _ in range(40)] for _ in range(6)]
-    for cycle, x in cycle_to_x.items():
-        idx = cycle - 1
-        draw_x, draw_y = idx % 40, idx // 40
-        if abs(draw_x - x) <= 1:
-            screen[draw_y][draw_x] = "#"
-    return "\n".join("".join(s) for s in screen)
+    xs = get_x_vals(puzzle)
+    return "\n".join([
+        "".join(["#" if abs((y * 40 + x) % 40 - xs[y * 40 + x]) <= 1 else "." for x in range(40)])
+        for y in range(6)]
+    )
 
 
 # `pytest *`
