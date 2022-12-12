@@ -1,6 +1,5 @@
 import math
 import re
-import time
 
 import common
 
@@ -13,6 +12,7 @@ MONKEY_PARSE = re.compile(r"""Monkey (\d+):
     If true: throw to monkey (\d+)
     If false: throw to monkey (\d+)""")
 
+
 class Monkey:
     def __init__(self, s):
         mid, items, op, div, t, f = re.findall(MONKEY_PARSE, s)[0]
@@ -20,7 +20,6 @@ class Monkey:
         self.items = [int(i) for i in items.split(", ")]
         self.op = op
         self.inspected = 0
-
 
 
 def first(puzzle):
@@ -47,11 +46,12 @@ def second(puzzle):
     for monkey in puzzle.split("\n\n"):
         monkeys.append(Monkey(monkey))
 
+    mod_by = math.prod(m.div for m in monkeys)
     for r in range(10000):
         for m in monkeys:
             for old in m.items:
                 m.inspected += 1
-                new = eval(m.op)
+                new = eval(m.op) % mod_by
                 if new % m.div == 0:
                     monkeys[m.t].items.append(new)
                 else:
@@ -64,16 +64,17 @@ def second(puzzle):
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 10605
+    assert first(PUZZLE) == 58056
     # assert second(PUZZLE) > 14395560342
     assert second(TEST_PUZZLE) == 2713310158
+    assert second(PUZZLE) == 15048718170
 
 
 if __name__ == "__main__":
     print(first(PUZZLE))
     print(second(PUZZLE))
 
-
-TEST_PUZZLE="""Monkey 0:
+TEST_PUZZLE = """Monkey 0:
   Starting items: 79, 98
   Operation: new = old * 19
   Test: divisible by 23
