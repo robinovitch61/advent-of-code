@@ -1,3 +1,4 @@
+# TODO: clean up
 import math
 import re
 
@@ -64,10 +65,9 @@ def second(puzzle):
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 10605
-    assert first(PUZZLE) == 58056
-    # assert second(PUZZLE) > 14395560342
-    assert second(TEST_PUZZLE) == 2713310158
-    assert second(PUZZLE) == 15048718170
+    # assert first(PUZZLE) == 58056
+    # assert second(TEST_PUZZLE) == 2713310158
+    # assert second(PUZZLE) == 15048718170
 
 
 if __name__ == "__main__":
