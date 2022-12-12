@@ -46,13 +46,19 @@ def first(puzzle):
 
 
 def second(puzzle):
-    return -1
+    grid = [list(l) for l in puzzle.split("\n")[:-1]]
+    all_a = []
+    for i in range(len(grid[0])):
+        for j in range(len(grid)):
+            if grid[j][i] == "a":
+                all_a.append((i, j))
+    return min(x for x in [steps_to_finish(grid, a[0], a[1]) for a in all_a] if x)
 
 
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 31
-    assert second(TEST_PUZZLE) == -1
+    assert second(TEST_PUZZLE) ==29
 
 
 if __name__ == "__main__":
