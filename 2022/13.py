@@ -9,7 +9,7 @@ def compare(left, right):
     for l, r in zip(left, right):
         if isinstance(l, int) and isinstance(r, int):
             if l != r:
-                return 1 if l < r else -1
+                return -1 if l < r else 1
         elif isinstance(l, list) and isinstance(r, list):
             if (res := compare(l, r)) is not None:
                 return res
@@ -20,15 +20,14 @@ def compare(left, right):
             if (res := compare([l], r)) is not None:
                 return res
     if len(left) != len(right):
-        return 1 if len(left) < len(right) else -1
+        return -1 if len(left) < len(right) else 1
 
 
 def first(puzzle):
     res = 0
     for i, pair in enumerate(puzzle.split("\n\n")):
         split = pair.split("\n")
-        comp = compare(eval(split[0]), eval(split[1]))
-        if comp == 1:
+        if compare(eval(split[0]), eval(split[1])) == -1:
             res += i + 1
     return res
 
@@ -38,7 +37,7 @@ def second(puzzle):
     for l in puzzle.split("\n"):
         if len(l):
             packets.append(eval(l))
-    sorted_packets = list(reversed(sorted(packets, key=functools.cmp_to_key(compare))))
+    sorted_packets = sorted(packets, key=functools.cmp_to_key(compare))
     return (sorted_packets.index([[2]]) + 1) * (sorted_packets.index([[6]]) + 1)
 
 
