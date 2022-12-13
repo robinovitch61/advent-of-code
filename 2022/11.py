@@ -22,12 +22,21 @@ class Monkey:
         self.inspected = 0
 
 
+def evaluate(op, old):
+    if op == "old * old":
+        return old * old
+    digit = int(re.findall(r"-?\d+", op)[0])
+    if "*" in op:
+        return old * digit
+    return old + digit
+
+
 def solve(monkeys, rounds, modify):
     for r in range(rounds):
         for m in monkeys:
             for old in m.items:
                 m.inspected += 1
-                new = modify(eval(m.op))
+                new = modify(evaluate(m.op, old))
                 if new % m.div == 0:
                     monkeys[m.t].items.append(new)
                 else:
