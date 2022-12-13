@@ -1,3 +1,4 @@
+import ast
 import functools
 
 import common
@@ -27,7 +28,7 @@ def first(puzzle):
     res = 0
     for i, pair in enumerate(puzzle.split("\n\n")):
         split = pair.split("\n")
-        if compare(eval(split[0]), eval(split[1])) == -1:
+        if compare(ast.literal_eval(split[0]), ast.literal_eval(split[1])) == -1:
             res += i + 1
     return res
 
@@ -36,7 +37,7 @@ def second(puzzle):
     packets = [[[2]], [[6]]]
     for l in puzzle.split("\n"):
         if len(l):
-            packets.append(eval(l))
+            packets.append(ast.literal_eval(l))
     sorted_packets = sorted(packets, key=functools.cmp_to_key(compare))
     return (sorted_packets.index([[2]]) + 1) * (sorted_packets.index([[6]]) + 1)
 
