@@ -30,11 +30,13 @@ def get_rocks(rock_lines):
 
 def get_rocks_in_line(line):
     rocks = set()
-    if line[0][0] == line[1][0]:  # vertical
-        for y in range(min(line[0][1], line[1][1]), max(line[0][1], line[1][1]) + 1):
+    vertical = line[0][0] == line[1][0]
+    varying = (line[0][1 if vertical else 0], line[1][1 if vertical else 0])
+    if vertical:
+        for y in range(min(*varying), max(*varying) + 1):
             rocks.add((line[0][0], y))
-    if line[0][1] == line[1][1]:  # horizontal
-        for x in range(min(line[0][0], line[1][0]), max(line[0][0], line[1][0]) + 1):
+    else:
+        for x in range(min(*varying), max(*varying) + 1):
             rocks.add((x, line[0][1]))
     return rocks
 
