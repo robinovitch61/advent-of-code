@@ -26,12 +26,12 @@ def max_pressure_released(flow_rates, graph, current_valve, open_valves, time):
     if time > 30:
         return 0
     release = sum(flow_rates[v] for v in open_valves)
-    if flow_rates[current_valve] > 0 and current_valve not in open_valves:
-        open_valves = open_valves + (current_valve,)
-        res = release + max_pressure_released(flow_rates, graph, current_valve, open_valves, time + 1)
-        cache[(current_valve, open_valves, time)] = res
-        return res
+    # TODO: don't always open valves
     max_pressure_release = 0
+    if flow_rates[current_valve] > 0 and current_valve not in open_valves:
+        max_next = release + max_pressure_released(flow_rates, graph, current_valve, open_valves + (current_valve,),
+                                                   time + 1)
+        max_pressure_release = max(max_pressure_release, max_next)
     for next_valve in graph[current_valve]:
         max_next = release + max_pressure_released(flow_rates, graph, next_valve, open_valves, time + 1)
         max_pressure_release = max(max_pressure_release, max_next)
