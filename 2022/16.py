@@ -23,16 +23,15 @@ GRAPH, FLOW_RATES = {}, {}
 
 
 @functools.lru_cache(maxsize=None)
-def max_pressure_released(current_valve, open_valves, time):
+def max_pressure_released(current_valve, open_valves, release, time):
     if time > 30:
         return 0
-    release = sum(FLOW_RATES[v] for v in open_valves)
     max_pressure_release = 0
     if FLOW_RATES[current_valve] > 0 and current_valve not in open_valves:
-        max_next = release + max_pressure_released(current_valve, open_valves + (current_valve,), time + 1)
+        max_next = release + max_pressure_released(current_valve, open_valves + (current_valve,), release + FLOW_RATES[current_valve], time + 1)
         max_pressure_release = max(max_pressure_release, max_next)
     for next_valve in GRAPH[current_valve]:
-        max_next = release + max_pressure_released(next_valve, open_valves, time + 1)
+        max_next = release + max_pressure_released(next_valve, open_valves, release, time + 1)
         max_pressure_release = max(max_pressure_release, max_next)
     return max_pressure_release
 
@@ -46,7 +45,7 @@ def first(puzzle):
             re.findall(r"Valve ([A-Z]{2}) has flow rate=(\d+); tunnels? leads? to valves? (.*)", line)[0]
         GRAPH[valve] = conns.split(", ")
         FLOW_RATES[valve] = int(flow_rate)
-    return max_pressure_released("AA", tuple(), 1)
+    return max_pressure_released("AA", tuple(), 0, 1)
 
 
 def second(puzzle):
