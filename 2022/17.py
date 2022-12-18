@@ -95,21 +95,21 @@ def drop(tower, shape, jets):
     return tower
 
 
-def get_jet_gen(puzzle):
-    def jet_gen():
-        i = -1
-        l = len(puzzle)
-        while True:
-            i += 1
-            yield puzzle[i % l]
+class Jets:
+    def __init__(self, puzzle):
+        self.i = -1
+        self.puzzle = puzzle
+        self.l = len(puzzle)
 
-    return jet_gen()
+    def __next__(self):
+        self.i += 1
+        return self.puzzle[self.i % self.l]
 
 
 def build_tower(puzzle, drops):
     tower = []
-    jets = get_jet_gen(puzzle)
-    for drop_num in range(drops):
+    jets = Jets(puzzle)
+    for drop_num in range(int(drops)):
         drop(tower, SHAPES[drop_num % len(SHAPES)], jets)
     return tower
 
@@ -118,17 +118,44 @@ def first(puzzle):
     return len(build_tower(puzzle, 2022))
 
 
-def second(puzzle):
-    return -1
+def second(puzzle, offset):
+    # puzzle = TEST_PUZZLE
+    tower = []
+    jets = Jets(puzzle)
+    drop_num = 0
+    first_bit = None
+    drops_to_first = None
+    while True:
+        drop(tower, SHAPES[drop_num % len(SHAPES)], jets)
+        drop_num += 1
+        reset_motion = (jets.i - offset) % jets.l == 0
+        if reset_motion:
+            if first_bit is None:
+                first_bit = len(tower)
+                drops_to_first = drop_num
+            else:
+                diff = len(tower) - first_bit
+                drops_per_diff = drop_num - drops_to_first
+                break
+    mult = (1000000000000 - drop_num) // drops_per_diff
+    drop_num += drops_per_diff * mult
+    middle_bit = diff * mult
+    while drop_num < 1000000000000:
+        drop(tower, SHAPES[drop_num % len(SHAPES)], jets)
+        drop_num += 1
+    return first_bit + middle_bit + (len(tower) - first_bit)
 
 
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 3068
     assert first(PUZZLE) == 3166
-    # assert second(TEST_PUZZLE) == -1
+    # determined offsets manually
+    assert second(TEST_PUZZLE, 0) == 1514285714288
+    assert second(PUZZLE, 2) == 1577207977186
 
 
 if __name__ == "__main__":
     print(first(PUZZLE))
-    # print(second(PUZZLE))
+    # determined offset manually
+    print(second(PUZZLE, 2))
