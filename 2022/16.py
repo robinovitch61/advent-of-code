@@ -28,7 +28,9 @@ def max_pressure_released(current_valve, open_valves, release, time):
         return 0
     max_pressure_release = 0
     if FLOW_RATES[current_valve] > 0 and current_valve not in open_valves:
-        max_next = release + max_pressure_released(current_valve, open_valves + (current_valve,), release + FLOW_RATES[current_valve], time + 1)
+        max_next = release + max_pressure_released(
+            current_valve, open_valves + (current_valve,), release + FLOW_RATES[current_valve], time + 1
+        )
         max_pressure_release = max(max_pressure_release, max_next)
     for next_valve in GRAPH[current_valve]:
         max_next = release + max_pressure_released(next_valve, open_valves, release, time + 1)
@@ -48,15 +50,65 @@ def first(puzzle):
     return max_pressure_released("AA", tuple(), 0, 1)
 
 
+@functools.lru_cache(maxsize=None)
+def with_elephant(me, elephant, open_valves, release, time):
+    if time > 26:
+        return 0
+
+    max_pressure_release = 0
+    me_at_closed = FLOW_RATES[me] > 0 and me not in open_valves
+    elephant_at_closed = FLOW_RATES[elephant] > 0 and elephant not in open_valves
+
+    # both of us open our valves
+    if me_at_closed and elephant_at_closed:
+        if me != elephant:
+            max_next = release + with_elephant(
+                me, elephant, open_valves + (me, elephant), release + FLOW_RATES[me] + FLOW_RATES[elephant], time + 1
+            )
+            max_pressure_release = max(max_pressure_release, max_next)
+
+    # i open my valve, elephant moves
+    if me_at_closed:
+        for next_elephant in GRAPH[elephant]:
+            max_next = release + with_elephant(
+                me, next_elephant, open_valves + (me,), release + FLOW_RATES[me], time + 1
+            )
+            max_pressure_release = max(max_pressure_release, max_next)
+
+    # elephant opens their valve, i move
+    if elephant_at_closed:
+        for next_me in GRAPH[me]:
+            max_next = release + with_elephant(
+                next_me, elephant, open_valves + (elephant,), release + FLOW_RATES[elephant], time + 1
+            )
+            max_pressure_release = max(max_pressure_release, max_next)
+
+    # both of us move
+    for next_elephant in GRAPH[elephant]:
+        for next_me in GRAPH[me]:
+            max_next = release + with_elephant(next_me, next_elephant, open_valves, release, time + 1)
+            max_pressure_release = max(max_pressure_release, max_next)
+
+    return max_pressure_release
+
+
 def second(puzzle):
-    return -1
+    GRAPH.clear()
+    FLOW_RATES.clear()
+    with_elephant.cache_clear()
+    for line in puzzle.split("\n")[:-1]:
+        valve, flow_rate, conns = \
+            re.findall(r"Valve ([A-Z]{2}) has flow rate=(\d+); tunnels? leads? to valves? (.*)", line)[0]
+        GRAPH[valve] = conns.split(", ")
+        FLOW_RATES[valve] = int(flow_rate)
+    return with_elephant("AA", "AA", tuple(), 0, 1)
 
 
 # `pytest *`
 def test():
-    assert first(TEST_PUZZLE) == 1651
-    assert first(PUZZLE) == 1584
-    assert second(TEST_PUZZLE) == -1
+    # assert first(TEST_PUZZLE) == 1651
+    # assert first(PUZZLE) == 1584
+    assert second(TEST_PUZZLE) == 1707
 
 
 if __name__ == "__main__":
