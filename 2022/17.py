@@ -1,6 +1,6 @@
 import common
 
-PUZZLE = common.string(17)
+PUZZLE = common.line(17)
 
 SHAPES = (
     (
@@ -27,51 +27,21 @@ SHAPES = (
         int(b"0011000", 2),
     ),
 )
+SHAPES = tuple(s[::-1] for s in SHAPES)
 
-TEST_PUZZLE = """>>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>
-"""
-
-
-# def print(a):
-#     pass
+TEST_PUZZLE = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
 
 
 def show(v):
-    return
     for l in v:
         print("|" + format(l, "07b").replace("0", ".").replace("1", "#") + "|")
-    print("+-------+")
-    print("")
+    print("+-------+\n")
 
-
-# shape
-# ...#... s2
-# ..###.. s1
-# ...#... s0
-
-# starting tower
-# ..####. t0
-
-# intermediate tower
-# ....... t3
-# ....... t2
-# ....... t1
-# ..####. t0
-
-# end tower
-# ...#... t3
-# ..###.. t2
-# ...#... t1
-# ..####. t0
 
 def drop(tower, shape, jets):
-    shape = list(shape[::-1])
-    # show(shape[::-1])
-
     # jets push at least 3 times without stopping
     for _ in range(3):
         jet_dir = next(jets)
-        # print(jet_dir)
         if jet_dir == ">":
             at_right_wall = any(s & 1 != 0 for s in shape)
             if not at_right_wall:
@@ -81,20 +51,14 @@ def drop(tower, shape, jets):
             if not at_left_wall:
                 shape = [l * 2 for l in shape]
 
-    show(shape[::-1])
-
     stopped = False
     overlap = 0
     while not stopped:
         # jet pushes
-        jet_dir = next(jets)
-        print(jet_dir)
-        # print(overlap)
-        if jet_dir == ">":
+        if next(jets) == ">":
             at_right_wall = any(s & 1 for s in shape)
             at_stopped = False
             for i, s in enumerate(shape[:overlap]):
-                # show([tower[len(tower) - overlap + i], s])
                 if tower[len(tower) - overlap + i] & (s // 2) != 0:
                     at_stopped = True
                     break
@@ -104,15 +68,12 @@ def drop(tower, shape, jets):
             at_left_wall = any(s & (1 << 6) for s in shape)
             at_stopped = False
             for i, s in enumerate(shape[:overlap]):
-                # show([tower[len(tower) - overlap + i], s])
                 if tower[len(tower) - overlap + i] & (s * 2) != 0:
                     at_stopped = True
                     break
             if not at_left_wall and not at_stopped:
                 shape = [s * 2 for s in shape]
 
-        show(shape[::-1])
-        show(tower[::-1])
         # drop
         overlap += 1
 
@@ -129,18 +90,12 @@ def drop(tower, shape, jets):
     # add shape to tower
     for _ in range(len(shape) - overlap):
         tower.append(0)
-    # print(overlap)
-    # show(tower[::-1])
     for i, final in enumerate(shape):
-        # print((len(tower) - 1) - (len(shape) - 1) - max(0, overlap - len(shape)) + i)
-        tower[(len(tower) - 1) - (len(shape) - 1) - max(0, overlap - len(shape)) + i] |= final
+        tower[len(tower) - len(shape) - max(0, overlap - len(shape)) + i] |= final
     return tower
 
 
-def first(puzzle):
-    puzzle = puzzle.strip()
-    tower = []
-
+def get_jet_gen(puzzle):
     def jet_gen():
         i = -1
         l = len(puzzle)
@@ -148,14 +103,19 @@ def first(puzzle):
             i += 1
             yield puzzle[i % l]
 
-    jets = jet_gen()
-    for drop_num in range(2022):
-    #     print(drop_num)
-    # for drop_num in range(4):
-        drop(tower, SHAPES[drop_num % len(SHAPES)], jets)
-        show(tower[::-1])
+    return jet_gen()
 
-    return len(tower)
+
+def build_tower(puzzle, drops):
+    tower = []
+    jets = get_jet_gen(puzzle)
+    for drop_num in range(drops):
+        drop(tower, SHAPES[drop_num % len(SHAPES)], jets)
+    return tower
+
+
+def first(puzzle):
+    return len(build_tower(puzzle, 2022))
 
 
 def second(puzzle):
@@ -165,7 +125,7 @@ def second(puzzle):
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 3068
-    assert first(PUZZLE) > 3164
+    assert first(PUZZLE) == 3166
     # assert second(TEST_PUZZLE) == -1
 
 

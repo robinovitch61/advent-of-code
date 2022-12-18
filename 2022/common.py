@@ -5,3 +5,7 @@ def filename(day):
 def string(day):
     with open(filename(day), "r") as f:
         return f.read()
+
+
+def line(day):
+    return string(day).strip().splitlines()[0]
