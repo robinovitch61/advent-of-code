@@ -59,10 +59,12 @@ def show(v):
 
 def drop(tower, shape, jets):
     shape = list(shape[::-1])
+    # show(shape[::-1])
 
     # jets push at least 3 times without stopping
     for _ in range(3):
         jet_dir = next(jets)
+        # print(jet_dir)
         if jet_dir == ">":
             at_right_wall = any(s & 1 != 0 for s in shape)
             if not at_right_wall:
@@ -72,15 +74,19 @@ def drop(tower, shape, jets):
             if not at_left_wall:
                 shape = [l * 2 for l in shape]
 
+    show(shape[::-1])
+
     stopped = False
     overlap = 0
     while not stopped:
         # jet pushes
-        if next(jets) == ">":
+        jet_dir = next(jets)
+        print(jet_dir)
+        if jet_dir == ">":
             at_right_wall = any(s & 1 for s in shape)
             at_stopped = False
             for i, s in enumerate(shape[:overlap]):
-                if tower[len(tower) - 1 - overlap + i] & (s // 3) != 0:
+                if tower[len(tower) - 1 - overlap + i] & (s // 2) != 0:
                     at_stopped = True
                     break
             if not at_right_wall and not at_stopped:
@@ -90,11 +96,13 @@ def drop(tower, shape, jets):
             at_stopped = False
             for i, s in enumerate(shape[:overlap]):
                 if tower[len(tower) - 1 - overlap + i] & (s * 2) != 0:
+                    print("HI")  # TODO LEO: something weird here
                     at_stopped = True
                     break
             if not at_left_wall and not at_stopped:
                 shape = [s * 2 for s in shape]
 
+        show(shape[::-1])
         # drop
         overlap += 1
         if not len(tower):
