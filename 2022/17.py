@@ -119,7 +119,6 @@ def first(puzzle):
 
 
 def second(puzzle, offset):
-    # puzzle = TEST_PUZZLE
     tower = []
     jets = Jets(puzzle)
     drop_num = 0
@@ -146,7 +145,7 @@ def second(puzzle, offset):
     return first_bit + middle_bit + (len(tower) - first_bit)
 
 
-# `pytest *`
+# `pytest -rfEP 17.py`
 def test():
     assert first(TEST_PUZZLE) == 3068
     assert first(PUZZLE) == 3166

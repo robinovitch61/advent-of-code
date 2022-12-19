@@ -11,7 +11,6 @@
 #     return -1
 #
 #
-# # `pytest *`
 # def test():
 #     assert first(TEST_PUZZLE) == -1
 #     assert second(TEST_PUZZLE) == -1
