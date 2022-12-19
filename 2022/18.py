@@ -21,11 +21,33 @@ def first(puzzle):
 
 
 def second(puzzle):
+    points = []
+    for l in puzzle.split("\n")[:-1]:
+        points.append(tuple(map(int, re.findall("\d+", l))))
+    xy = [["." for _ in range(10)] for _ in range(10)]
+    xz = [["." for _ in range(10)] for _ in range(10)]
+    yz = [["." for _ in range(10)] for _ in range(10)]
+    xypoints = [(x, y) for x, y, z in points]
+    xzpoints = [(x, z) for x, y, z in points]
+    yzpoints = [(y, z) for x, y, z in points]
+    for x in range(10):
+        for y in range(10):
+            for z in range(10):
+                if (x, y) in xypoints:
+                    xy[x][y] = "#"
+                if (x, z) in xzpoints:
+                    xz[x][z] = "#"
+                if (y, z) in yzpoints:
+                    yz[y][z] = "#"
+    print("\n".join(["".join(l) for l in xy]), "\n")
+    print("\n".join(["".join(l) for l in xz]), "\n")
+    print("\n".join(["".join(l) for l in yz]), "\n")
     return -1
 
 
 def test():
-    assert first(TEST_PUZZLE) == 64
+    # assert first(TEST_PUZZLE) == 64
+    # assert first(PUZZLE) == 3470
     assert second(TEST_PUZZLE) == -1
 
 
