@@ -9,3 +9,7 @@ def string(day):
 
 def line(day):
     return string(day).strip().splitlines()[0]
+
+
+def lines(day):
+    return string(day).split("\n")[:-1]  # assumes last line is newline
