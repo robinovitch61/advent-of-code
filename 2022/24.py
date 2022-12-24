@@ -1,4 +1,3 @@
-import functools
 from collections import defaultdict
 
 import common
@@ -16,19 +15,11 @@ TEST_PUZZLE = """#.######
 UP, DOWN, LEFT, RIGHT = "^", "v", "<", ">"
 
 
-class HashableDefaultDict(defaultdict):
-    def __hash__(self):
-        tuples = []
-        for pos, dirs in self.items():
-            tuples.append((pos, tuple(dirs)))
-        return hash(tuple(sorted(tuples)))
-
-
 def parse(puzzle):
     w, h = len(puzzle.split("\n")[0]) - 2, len(puzzle.split("\n")) - 3
-    blizzards = HashableDefaultDict(list)  # pos -> List[direction]
+    blizzards = defaultdict(list)  # pos -> List[direction]
     for j, l in enumerate(puzzle.split("\n")[1:-2]):
-        for i, c in enumerate(l[1:len(l) - 2]):
+        for i, c in enumerate(l[1:len(l) - 1]):
             if c != ".":
                 blizzards[(i, j)].append(c)
     return w, h, blizzards
@@ -44,7 +35,7 @@ def adjacent(w, h, i, j):
 
 
 def update_blizzards(w, h, blizzards):
-    new_blizzards = HashableDefaultDict(list)  # pos -> List[direction]
+    new_blizzards = defaultdict(list)  # pos -> List[direction]
     for (i, j), dirs in blizzards.items():
         for d in dirs:
             if d == UP:
@@ -72,36 +63,33 @@ def update_blizzards(w, h, blizzards):
     return new_blizzards
 
 
-@functools.lru_cache(None)
 def smallest_mins_to_end(mins, i, j, w, h, blizzards):
-    blizzards = blizzards.copy()
-    candidates = []
+    positions = {(i, j)}
 
-    # update blizzards
-    blizzards = update_blizzards(w, h, blizzards)
+    while True:
+        new_positions = set()
+        mins += 1
+        blizzards = update_blizzards(w, h, blizzards)
 
-    # done
-    if i == w - 1 and j == h - 1:
-        return mins + 1
+        for i, j in positions:
+            # done
+            if i == w - 1 and j == h - 1:
+                return mins
 
-    # wait
-    if (i, j) not in blizzards:
-        candidates.append(smallest_mins_to_end(mins + 1, i, j, w, h, blizzards))
+            # wait
+            if (i, j) not in blizzards:
+                new_positions.add((i, j))
 
-    # move
-    if i is None:
-        if (0, 0) not in blizzards:
-            candidates.append(smallest_mins_to_end(mins + 1, 0, 0, w, h, blizzards))
-    else:
-        for a in adjacent(w, h, i, j):
-            if a not in blizzards:
-                candidates.append(smallest_mins_to_end(mins + 1, a[0], a[1], w, h, blizzards))
+            # move
+            if i is None:
+                if (0, 0) not in blizzards:
+                    new_positions.add((0, 0))
+            else:
+                for a in adjacent(w, h, i, j):
+                    if a not in blizzards:
+                        new_positions.add(a)
 
-    # blocked
-    if len(candidates) == 0:
-        return float("inf")
-
-    return min(candidates)
+        positions = new_positions
 
 
 def first(puzzle):
