@@ -42,13 +42,29 @@ def first(puzzle):
     return results["root"]
 
 
+def diff(candidate, results):
+    n1, _, n2 = results["root"]
+    results["humn"] = int(candidate)
+    while isinstance(results[n1], tuple) or isinstance(results[n2], tuple):
+        update_results(results)
+    return results[n1] - results[n2]
+
+
 def second(puzzle):
-    return -1
+    results = make_results(puzzle)
+    candidate = 3059361893000  # guess and check bb
+    while True:
+        fc = diff(candidate, results.copy())
+        print(candidate, fc)
+        if fc == 0:
+            return candidate
+        candidate += 1
 
 
 def test():
-    assert first(TEST_PUZZLE) == -1
-    assert second(TEST_PUZZLE) == -1
+    assert first(TEST_PUZZLE) == 152
+    assert first(PUZZLE) == 124765768589550
+    assert second(TEST_PUZZLE) == 301
 
 
 if __name__ == "__main__":
