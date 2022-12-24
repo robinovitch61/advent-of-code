@@ -47,24 +47,29 @@ def diff(candidate, results):
     results["humn"] = int(candidate)
     while isinstance(results[n1], tuple) or isinstance(results[n2], tuple):
         update_results(results)
-    return results[n1] - results[n2]
+    return abs(results[n1] - results[n2])
 
 
 def second(puzzle):
     results = make_results(puzzle)
-    candidate = 3059361893000  # guess and check bb
+    candidate = 1
+    dx = 1000
     while True:
         fc = diff(candidate, results.copy())
-        print(candidate, fc)
+        dfc = (diff(candidate + dx, results.copy()) - fc) // dx
         if fc == 0:
             return candidate
-        candidate += 1
+        if dfc == 0:
+            candidate += 1
+            continue
+        candidate -= fc // dfc  # newton's method
 
 
 def test():
     assert first(TEST_PUZZLE) == 152
     assert first(PUZZLE) == 124765768589550
     assert second(TEST_PUZZLE) == 301
+    assert second(PUZZLE) == 3059361893925
 
 
 if __name__ == "__main__":
