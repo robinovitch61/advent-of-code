@@ -47,29 +47,35 @@ def diff(candidate, results):
     results["humn"] = int(candidate)
     while isinstance(results[n1], tuple) or isinstance(results[n2], tuple):
         update_results(results)
-    return abs(results[n1] - results[n2])
+    return results[n1] - results[n2]
 
 
 def second(puzzle):
     results = make_results(puzzle)
-    candidate = 1
-    dx = 1000
-    while True:
-        fc = diff(candidate, results.copy())
-        dfc = (diff(candidate + dx, results.copy()) - fc) // dx
-        if fc == 0:
-            return candidate
-        if dfc == 0:
-            candidate += 1
-            continue
-        candidate -= fc // dfc  # newton's method
+    l, r = 1, int(1e15)
+    positive_and_decreasing = (diff(l, results.copy()) > 0) and (diff(r, results.copy()) < 0)
+    while l <= r:
+        m = l + (r - l) // 2
+        at_m = diff(m, results.copy())
+        if at_m == 0 and diff(m - 1, results.copy()) != 0:
+            return m
+        if positive_and_decreasing:
+            if at_m > 0:
+                l = m + 1
+            else:
+                r = m - 1
+        else:
+            if at_m < 0:
+                l = m + 1
+            else:
+                r = m - 1
 
 
 def test():
     assert first(TEST_PUZZLE) == 152
     assert first(PUZZLE) == 124765768589550
     assert second(TEST_PUZZLE) == 301
-    assert second(PUZZLE) == 3059361893925
+    assert second(PUZZLE) == 3059361893920
 
 
 if __name__ == "__main__":
