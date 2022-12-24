@@ -138,6 +138,7 @@ def second(puzzle):
 
 def test():
     assert first(TEST_PUZZLE) == 6032
+    assert first(PUZZLE) == 126350
     assert second(TEST_PUZZLE) == -1
 
 
