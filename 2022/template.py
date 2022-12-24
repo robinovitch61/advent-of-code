@@ -2,6 +2,9 @@
 #
 # PUZZLE = common.string()
 #
+# TEST_PUZZLE = """
+# """
+#
 #
 # def first(puzzle):
 #     return -1
@@ -19,7 +22,3 @@
 # if __name__ == "__main__":
 #     print(first(PUZZLE))
 #     print(second(PUZZLE))
-#
-#
-# TEST_PUZZLE="""
-# """
