@@ -49,7 +49,6 @@ def move_elves(directions, elves):
             for d in directions:
                 check, (dpi, dpj) = DIR_DIFFS[d]
                 if not any((i + ci, j + cj) in elves for ci, cj in check):
-                    # print(f"elf {(i, j)} proposing {(i + dpi, j + dpj)}")
                     proposals[(i + dpi, j + dpj)].append((i, j))
                     break
 
