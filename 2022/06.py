@@ -5,7 +5,7 @@ PUZZLE = common.string(6)
 
 def solve(puzzle, n):
     l, r = 0, n
-    while r <= len(puzzle):
+    while r < len(puzzle):
         if len(set(puzzle[l:r])) == n:
             return r
         l, r = l + 1, r + 1
