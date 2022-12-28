@@ -171,7 +171,6 @@ def get_face_info(board):
         face_to_top_left_pos[face] = (down, across)
         for i in range(side):
             for j in range(side):
-                assert (down + i, across + j) in board
                 pos_to_face[(down + i, across + j)] = face
         across += side
 
@@ -210,8 +209,6 @@ def move_cube(board, teleport_func, r, c, d):
 
 
 def make_teleport_func(board, side, pos_to_face, face_to_top_left_pos, teleport_map):
-    """Returns a function that maps an edge position (and direction?) to the next position and direction."""
-
     def func(r, c, d):
         curr_face = pos_to_face[(r, c)]
         next_face, next_direction, flip = teleport_map[(curr_face, d)]
@@ -225,7 +222,6 @@ def make_teleport_func(board, side, pos_to_face, face_to_top_left_pos, teleport_
             raise Exception(d)
         if flip:
             offset = side - 1 - offset
-        # assert offset > 0
 
         if next_direction == UP:
             rr = next_down + side - 1
@@ -274,7 +270,7 @@ def test():
     assert first(TEST_PUZZLE) == 6032
     assert first(PUZZLE) == 126350
     assert second(TEST_PUZZLE, TEST_TELEPORT_MAP) == 5031
-    # assert second(TEST_PUZZLE, TELEPORT_MAP) == 5031
+    assert second(PUZZLE, TELEPORT_MAP) == 129339
 
 
 if __name__ == "__main__":
