@@ -114,7 +114,33 @@ def first(puzzle):
     return 1000 * (r + 1) + 4 * (c + 1) + list(CLOCKWISE.keys()).index(d)
 
 
+def get_pos_to_face(board):
+    rs, cs = zip(*board.keys())
+    height, width = max(rs) - min(rs), max(cs) - min(cs)
+    side = (min(height, width) + 1) // 3
+    face = 0
+    pos_to_face = {}
+    down = 0
+    across = 0
+    while True:
+        while (down, across) not in board:
+            across += 1
+            if across > side * 4:
+                down += side
+                if down > side * 4:
+                    return pos_to_face
+                across = 0
+        face += 1
+        for i in range(side):
+            for j in range(side):
+                assert (down + i, across + j) in board
+                pos_to_face[(down + i, across + j)] = face
+        across += side
+
+
 def second(puzzle):
+    board, commands = parse(puzzle)
+    pos_to_face = get_pos_to_face(board)
     return -1
 
 
@@ -122,6 +148,7 @@ def test():
     assert first(TEST_PUZZLE) == 6032
     assert first(PUZZLE) == 126350
     assert second(TEST_PUZZLE) == -1
+    assert second(PUZZLE) == -1
 
 
 if __name__ == "__main__":
