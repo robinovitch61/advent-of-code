@@ -1,4 +1,8 @@
 import functools
+from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import networkx as nx
 import re
 
 import common
@@ -19,7 +23,7 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
 
-GRAPH, FLOW_RATES = {}, {}
+GRAPH, FLOW_RATES = defaultdict(list), {}
 
 
 @functools.lru_cache(maxsize=None)
@@ -42,11 +46,16 @@ def first(puzzle):
     GRAPH.clear()
     FLOW_RATES.clear()
     max_pressure_released.cache_clear()
+    G = nx.Graph()
     for line in puzzle.split("\n")[:-1]:
         valve, flow_rate, conns = \
             re.findall(r"Valve ([A-Z]{2}) has flow rate=(\d+); tunnels? leads? to valves? (.*)", line)[0]
-        GRAPH[valve] = conns.split(", ")
+        for conn in conns.split(", "):
+            G.add_edge(valve, conn)
+            GRAPH[valve].append(conn)
         FLOW_RATES[valve] = int(flow_rate)
+    nx.draw(G, with_labels=True, font_weight='bold')
+    plt.show()
     return max_pressure_released("AA", tuple(), 0, 1)
 
 
@@ -106,9 +115,9 @@ def second(puzzle):
 
 # `pytest *`
 def test():
-    # assert first(TEST_PUZZLE) == 1651
+    assert first(TEST_PUZZLE) == 1651
     # assert first(PUZZLE) == 1584
-    assert second(TEST_PUZZLE) == 1707
+    # assert second(TEST_PUZZLE) == 1707
 
 
 if __name__ == "__main__":
