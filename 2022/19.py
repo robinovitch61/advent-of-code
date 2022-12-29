@@ -21,7 +21,7 @@ TEST_PUZZLE = [
 ]
 
 
-@dataclass
+@dataclass(frozen=True)
 class Blueprint:
     num: int
     ore_for_ore_robot: int
@@ -48,6 +48,9 @@ class Inventory:
     geode_robots: int = 0
     pending_geode_robots: Tuple[int] = ()
 
+    # def __hash__(self):
+    #     return hash(f"{hash(self.bp)}-ore:{self.ore}-orer{self.ore_robots}-pore{self.pending_ore_robots}-clay{self.clay}-clayr{self.clay_robots}-pclay{self.pending_clay_robots}-obs{self.obs}-obsr{self.obs_robots}-pobs{self.pending_obs_robots}-geode{self.geodes}-geoder{self.geode_robots}-pgeode={self.pending_geode_robots}")
+
     def __init__(self, bp):
         self.bp = bp
 
@@ -67,40 +70,84 @@ class Inventory:
     def __eq__(self, other: Inventory):
         return self._score() == other._score()
 
+    def can_buy_geode_robot(self):
+        return self.ore >= self.bp.ore_for_geode_robot and self.obs >= self.bp.obs_for_geode_robot
+
+    def buy_geode_robot(self):
+        self.ore -= self.bp.ore_for_geode_robot
+        self.obs -= self.bp.obs_for_geode_robot
+        self.pending_geode_robots += (1,)
+
+    def can_buy_obs_robot(self):
+        return self.ore >= self.bp.ore_for_obs_robot and self.clay >= self.bp.clay_for_obs_robot
+
+    def should_buy_obs_robot(self):
+        return (self.obs_robots + len(self.pending_obs_robots)) < self.bp.obs_for_geode_robot
+
+    def buy_obs_robot(self):
+        self.ore -= self.bp.ore_for_obs_robot
+        self.clay -= self.bp.clay_for_obs_robot
+        self.pending_obs_robots += (1,)
+
+    def can_buy_clay_robot(self):
+        return self.ore >= self.bp.ore_for_clay_robot
+
+    def should_buy_clay_robot(self):
+        return (self.clay_robots + len(self.pending_clay_robots)) < self.bp.clay_for_obs_robot
+
+    def buy_clay_robot(self):
+        self.ore -= self.bp.ore_for_clay_robot
+        self.pending_clay_robots += (1,)
+
+    def can_buy_ore_robot(self):
+        return self.ore >= self.bp.ore_for_ore_robot
+
+    def should_buy_ore_robot(self):
+        # return self.ore_robots < self.bp.ore_for_clay_robot + self.bp.ore_for_clay_robot + self.bp.ore_for_obs_robot
+        return (self.ore_robots + len(self.pending_ore_robots)) < max(self.bp.ore_for_ore_robot,
+                                                                      self.bp.ore_for_clay_robot,
+                                                                      self.bp.ore_for_clay_robot,
+                                                                      self.bp.ore_for_obs_robot)
+
+    def buy_ore_robot(self):
+        self.ore -= self.bp.ore_for_ore_robot
+        self.pending_ore_robots += (1,)
+
+
 
 def potential_inventories(i: Inventory) -> List[Inventory]:
     inventories = [i]
 
     # can buy geode robot
-    if i.ore >= i.bp.ore_for_geode_robot and i.obs >= i.bp.obs_for_geode_robot:
+    if i.can_buy_geode_robot():
         ni = copy(i)
-        ni.ore -= i.bp.ore_for_geode_robot
-        ni.obs -= i.bp.obs_for_geode_robot
-        ni.pending_geode_robots += (1,)
+        ni.buy_geode_robot()
         inventories.append(ni)
+        # return inventories
 
     # can buy obs robot
-    if i.ore >= i.bp.ore_for_obs_robot and i.clay >= i.bp.clay_for_obs_robot:
+    if i.can_buy_obs_robot() and i.should_buy_obs_robot():
         ni = copy(i)
-        ni.ore -= i.bp.ore_for_obs_robot
-        ni.clay -= i.bp.clay_for_obs_robot
-        ni.pending_obs_robots += (1,)
+        ni.buy_obs_robot()
         inventories.append(ni)
+        # return inventories
 
     # can buy clay robot
-    if i.ore >= i.bp.ore_for_clay_robot:
+    if i.can_buy_clay_robot() and i.should_buy_clay_robot():
         ni = copy(i)
-        ni.ore -= i.bp.ore_for_clay_robot
-        ni.pending_clay_robots += (1,)
+        ni.buy_clay_robot()
         inventories.append(ni)
+        # return inventories
 
     # can buy ore robot
-    if i.ore >= i.bp.ore_for_ore_robot:
+    if i.can_buy_ore_robot() and i.should_buy_ore_robot():
         ni = copy(i)
-        ni.ore -= i.bp.ore_for_ore_robot
-        ni.pending_ore_robots += (1,)
+        ni.buy_ore_robot()
         inventories.append(ni)
+        # return inventories
 
+    # if not len(inventories):
+    #     return [i]
     return inventories
 
 
@@ -152,21 +199,32 @@ def get_blueprints(puzzle):
 
 def quality_level(bp: Blueprint):
     inventories = deque([Inventory(bp=bp)])
-    max_inventories = 100000
+    # max_inventories = 100000
     # kill_no_clay_robot_inventories_starting_at = bp.ore_for_clay_robot + 1
     # kill_no_geode_inventories_starting_at = 20
+    max_geodes = 0
+    min_t_geode = None
+    run_for = 24
     for t in range(24):
         print(t, len(inventories))
         for i in range(len(inventories)):
             for ni in potential_inventories(inventories.popleft()):
                 inventories.append(ni)
         inventories = deque([update(i) for i in inventories])
-        if len(inventories) > max_inventories:
-            inventories = deque(sorted(inventories)[-max_inventories:])
+        max_geodes = max(max_geodes, max(i.geodes for i in inventories))
+        if max_geodes > 0 and min_t_geode is None:
+            min_t_geode = t
+        if min_t_geode is not None and t >= min_t_geode:
+            inventories = deque([i for i in inventories if i.geodes > 0])
+        max_possible_geodes = (run_for - (t + 1)) ** 2 // 2
+        inventories = deque([i for i in inventories if (i.geodes + max_possible_geodes) >= max_geodes])
+        # if len(inventories) > max_inventories:
+        #     inventories = deque(sorted(inventories)[-max_inventories:])
         # if t >= kill_no_clay_robot_inventories_starting_at:
         #     inventories = deque(i for i in inventories if i.clay_robots > 0)
         # if t >= kill_no_geode_inventories_starting_at:
         #     inventories = deque(i for i in inventories if i.geodes > 0)
+    print(max(i.geodes for i in inventories))
     return bp.num * max(i.geodes for i in inventories)
 
 
@@ -175,9 +233,8 @@ def first(puzzle):
     blueprints = get_blueprints(puzzle)
     qls = []
     for bp in blueprints:
-        ql = quality_level(bp)
-        print(ql)
-        qls.append(ql)
+        qls.append(quality_level(bp))
+        print(qls)
     return sum(qls)
 
 
