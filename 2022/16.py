@@ -1,10 +1,10 @@
 import functools
 import re
-from collections import deque, defaultdict
+from collections import deque
+from dataclasses import dataclass
+from typing import Tuple
 
 import common
-
-# BELLMAN-FORD ALGO? FLOYD-WARSHALL ALGO
 
 PUZZLE = common.string(16)
 
@@ -20,112 +20,108 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
 
-GRAPH, FLOW_RATES = {}, {}
+
+@dataclass
+class State:
+    time: int
+    valve: str
+    open_valves: Tuple[str, ...]
+    rate: int
+    released: int
 
 
-@functools.lru_cache(maxsize=None)
-def max_pressure_released(current_valve, open_valves, release, time):
-    if time > 30:
-        return 0
-    max_pressure_release = 0
-    if FLOW_RATES[current_valve] > 0 and current_valve not in open_valves:
-        max_next = release + max_pressure_released(
-            current_valve, open_valves + (current_valve,), release + FLOW_RATES[current_valve], time + 1
-        )
-        max_pressure_release = max(max_pressure_release, max_next)
-    for next_valve in GRAPH[current_valve]:
-        max_next = release + max_pressure_released(next_valve, open_valves, release, time + 1)
-        max_pressure_release = max(max_pressure_release, max_next)
-    return max_pressure_release
+def parse(puzzle):
+    graph, flow_rates = {}, {}
+    for line in puzzle.split("\n")[:-1]:
+        valve, flow_rate, conns = \
+            re.findall(r"Valve ([A-Z]{2}) has flow rate=(\d+); tunnels? leads? to valves? (.*)", line)[0]
+        graph[valve] = conns.split(", ")
+        flow_rates[valve] = int(flow_rate)
+    return graph, flow_rates
 
 
 def first(puzzle):
-    GRAPH.clear()
-    FLOW_RATES.clear()
-    STATES = deque()
-    # current_node, open_valves, rate, time, released
-    STATES.append(("AA", tuple(), 0, 1, 0))
-    max_pressure_released.cache_clear()
-    for line in puzzle.split("\n")[:-1]:
-        valve, flow_rate, conns = \
-            re.findall(r"Valve ([A-Z]{2}) has flow rate=(\d+); tunnels? leads? to valves? (.*)", line)[0]
-        GRAPH[valve] = conns.split(", ")
-        FLOW_RATES[valve] = int(flow_rate)
+    graph, flow_rates = parse(puzzle)
+    states = deque([State(time=1, valve="AA", open_valves=tuple(), rate=0, released=0)])
     run_for = 30
-    max_runs = 10000
-    while not all(state[3] == run_for for state in STATES):
-        if len(STATES) > max_runs:
-            STATES = deque(sorted(STATES, key=lambda x: x[-1])[-max_runs:])
-        for _ in range(len(STATES)):
-            state = STATES.popleft()
-            current_valve, open_valves, rate, time, released = state
-            if time == run_for:
-                STATES.append(state)
+    max_states = 1000
+    while not all(state.time == run_for for state in states):
+        if len(states) > max_states:
+            states = deque(sorted(states, key=lambda s: s.released)[-max_states:])
+
+        for _ in range(len(states)):
+            state = states.popleft()
+            if state.time == run_for:
+                states.append(state)
                 continue
-            if FLOW_RATES[current_valve] > 0 and current_valve not in open_valves:
-                STATES.append(
-                    (current_valve, open_valves + (current_valve,), rate + FLOW_RATES[current_valve], time + 1, released + rate + FLOW_RATES[current_valve])
+            if flow_rates[state.valve] > 0 and state.valve not in state.open_valves:
+                new_rate = state.rate + flow_rates[state.valve]
+                states.append(
+                    State(
+                        time=state.time + 1,
+                        valve=state.valve,
+                        open_valves=state.open_valves + (state.valve,),
+                        rate=new_rate,
+                        released=state.released + new_rate
+                    )
                 )
-            for next_valve in GRAPH[current_valve]:
-                STATES.append(
-                    (next_valve, open_valves, rate, time + 1, released + rate)
+            for next_valve in graph[state.valve]:
+                states.append(
+                    State(
+                        time=state.time + 1,
+                        valve=next_valve,
+                        open_valves=state.open_valves,
+                        rate=state.rate,
+                        released=state.released + state.rate
+                    )
                 )
-    print(max(STATES, key=lambda x: x[-1]))
-    return max(STATES, key=lambda x: x[-1])[-1]
+    return max(s.released for s in states)
 
 
-@functools.lru_cache(maxsize=None)
-def with_elephant(me, elephant, open_valves, release, time):
-    if time > 26:
-        return 0
-
-    max_pressure_release = 0
-    me_at_closed = FLOW_RATES[me] > 0 and me not in open_valves
-    elephant_at_closed = FLOW_RATES[elephant] > 0 and elephant not in open_valves
-
-    # both of us open our valves
-    if me_at_closed and elephant_at_closed:
-        if me != elephant:
-            max_next = release + with_elephant(
-                me, elephant, open_valves + (me, elephant), release + FLOW_RATES[me] + FLOW_RATES[elephant], time + 1
-            )
-            max_pressure_release = max(max_pressure_release, max_next)
-
-    # i open my valve, elephant moves
-    if me_at_closed:
-        for next_elephant in GRAPH[elephant]:
-            max_next = release + with_elephant(
-                me, next_elephant, open_valves + (me,), release + FLOW_RATES[me], time + 1
-            )
-            max_pressure_release = max(max_pressure_release, max_next)
-
-    # elephant opens their valve, i move
-    if elephant_at_closed:
-        for next_me in GRAPH[me]:
-            max_next = release + with_elephant(
-                next_me, elephant, open_valves + (elephant,), release + FLOW_RATES[elephant], time + 1
-            )
-            max_pressure_release = max(max_pressure_release, max_next)
-
-    # both of us move
-    for next_elephant in GRAPH[elephant]:
-        for next_me in GRAPH[me]:
-            max_next = release + with_elephant(next_me, next_elephant, open_valves, release, time + 1)
-            max_pressure_release = max(max_pressure_release, max_next)
-
-    return max_pressure_release
+# @functools.lru_cache(maxsize=None)
+# def with_elephant(me, elephant, open_valves, release, time):
+#     if time > 26:
+#         return 0
+#
+#     max_pressure_release = 0
+#     me_at_closed = FLOW_RATES[me] > 0 and me not in open_valves
+#     elephant_at_closed = FLOW_RATES[elephant] > 0 and elephant not in open_valves
+#
+#     # both of us open our valves
+#     if me_at_closed and elephant_at_closed:
+#         if me != elephant:
+#             max_next = release + with_elephant(
+#                 me, elephant, open_valves + (me, elephant), release + FLOW_RATES[me] + FLOW_RATES[elephant], time + 1
+#             )
+#             max_pressure_release = max(max_pressure_release, max_next)
+#
+#     # i open my valve, elephant moves
+#     if me_at_closed:
+#         for next_elephant in GRAPH[elephant]:
+#             max_next = release + with_elephant(
+#                 me, next_elephant, open_valves + (me,), release + FLOW_RATES[me], time + 1
+#             )
+#             max_pressure_release = max(max_pressure_release, max_next)
+#
+#     # elephant opens their valve, i move
+#     if elephant_at_closed:
+#         for next_me in GRAPH[me]:
+#             max_next = release + with_elephant(
+#                 next_me, elephant, open_valves + (elephant,), release + FLOW_RATES[elephant], time + 1
+#             )
+#             max_pressure_release = max(max_pressure_release, max_next)
+#
+#     # both of us move
+#     for next_elephant in GRAPH[elephant]:
+#         for next_me in GRAPH[me]:
+#             max_next = release + with_elephant(next_me, next_elephant, open_valves, release, time + 1)
+#             max_pressure_release = max(max_pressure_release, max_next)
+#
+#     return max_pressure_release
 
 
 def second(puzzle):
-    GRAPH.clear()
-    FLOW_RATES.clear()
-    with_elephant.cache_clear()
-    for line in puzzle.split("\n")[:-1]:
-        valve, flow_rate, conns = \
-            re.findall(r"Valve ([A-Z]{2}) has flow rate=(\d+); tunnels? leads? to valves? (.*)", line)[0]
-        GRAPH[valve] = conns.split(", ")
-        FLOW_RATES[valve] = int(flow_rate)
-    return with_elephant("AA", "AA", tuple(), 0, 1)
+    return -1
 
 
 # `pytest *`
