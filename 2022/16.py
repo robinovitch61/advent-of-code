@@ -1,9 +1,6 @@
 import functools
-from collections import defaultdict
-
-import matplotlib.pyplot as plt
-import networkx as nx
 import re
+from collections import deque, defaultdict
 
 import common
 
@@ -23,7 +20,7 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
 
-GRAPH, FLOW_RATES = defaultdict(list), {}
+GRAPH, FLOW_RATES = {}, {}
 
 
 @functools.lru_cache(maxsize=None)
@@ -45,18 +42,36 @@ def max_pressure_released(current_valve, open_valves, release, time):
 def first(puzzle):
     GRAPH.clear()
     FLOW_RATES.clear()
+    STATES = deque()
+    # current_node, open_valves, rate, time, released
+    STATES.append(("AA", tuple(), 0, 1, 0))
     max_pressure_released.cache_clear()
-    G = nx.Graph()
     for line in puzzle.split("\n")[:-1]:
         valve, flow_rate, conns = \
             re.findall(r"Valve ([A-Z]{2}) has flow rate=(\d+); tunnels? leads? to valves? (.*)", line)[0]
-        for conn in conns.split(", "):
-            G.add_edge(valve, conn)
-            GRAPH[valve].append(conn)
+        GRAPH[valve] = conns.split(", ")
         FLOW_RATES[valve] = int(flow_rate)
-    nx.draw(G, with_labels=True, font_weight='bold')
-    plt.show()
-    return max_pressure_released("AA", tuple(), 0, 1)
+    run_for = 30
+    max_runs = 10000
+    while not all(state[3] == run_for for state in STATES):
+        if len(STATES) > max_runs:
+            STATES = deque(sorted(STATES, key=lambda x: x[-1])[-max_runs:])
+        for _ in range(len(STATES)):
+            state = STATES.popleft()
+            current_valve, open_valves, rate, time, released = state
+            if time == run_for:
+                STATES.append(state)
+                continue
+            if FLOW_RATES[current_valve] > 0 and current_valve not in open_valves:
+                STATES.append(
+                    (current_valve, open_valves + (current_valve,), rate + FLOW_RATES[current_valve], time + 1, released + rate + FLOW_RATES[current_valve])
+                )
+            for next_valve in GRAPH[current_valve]:
+                STATES.append(
+                    (next_valve, open_valves, rate, time + 1, released + rate)
+                )
+    print(max(STATES, key=lambda x: x[-1]))
+    return max(STATES, key=lambda x: x[-1])[-1]
 
 
 @functools.lru_cache(maxsize=None)
@@ -116,10 +131,10 @@ def second(puzzle):
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 1651
-    # assert first(PUZZLE) == 1584
+    assert first(PUZZLE) == 1584
     # assert second(TEST_PUZZLE) == 1707
 
 
 if __name__ == "__main__":
     print(first(PUZZLE))
-    print(second(PUZZLE))
+    # print(second(PUZZLE))
