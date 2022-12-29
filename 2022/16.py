@@ -1,4 +1,3 @@
-import functools
 import re
 from collections import deque
 from dataclasses import dataclass
@@ -23,7 +22,6 @@ Valve JJ has flow rate=21; tunnel leads to valve II
 
 @dataclass
 class State:
-    time: int
     valve: str
     open_valves: Tuple[str, ...]
     rate: int
@@ -42,23 +40,22 @@ def parse(puzzle):
 
 def first(puzzle):
     graph, flow_rates = parse(puzzle)
-    states = deque([State(time=1, valve="AA", open_valves=tuple(), rate=0, released=0)])
+    states = deque([State(valve="AA", open_valves=tuple(), rate=0, released=0)])
     run_for = 30
     max_states = 1000
-    while not all(state.time == run_for for state in states):
+    time = 1
+    while time < run_for:
+        time += 1
+
         if len(states) > max_states:
             states = deque(sorted(states, key=lambda s: s.released)[-max_states:])
 
         for _ in range(len(states)):
             state = states.popleft()
-            if state.time == run_for:
-                states.append(state)
-                continue
             if flow_rates[state.valve] > 0 and state.valve not in state.open_valves:
                 new_rate = state.rate + flow_rates[state.valve]
                 states.append(
                     State(
-                        time=state.time + 1,
                         valve=state.valve,
                         open_valves=state.open_valves + (state.valve,),
                         rate=new_rate,
@@ -68,7 +65,6 @@ def first(puzzle):
             for next_valve in graph[state.valve]:
                 states.append(
                     State(
-                        time=state.time + 1,
                         valve=next_valve,
                         open_valves=state.open_valves,
                         rate=state.rate,
@@ -78,73 +74,25 @@ def first(puzzle):
     return max(s.released for s in states)
 
 
-@functools.lru_cache(maxsize=None)
-def with_elephant(me, elephant, open_valves, release, time):
-    if time > 26:
-        return 0
-
-    max_pressure_release = 0
-    me_at_closed = FLOW_RATES[me] > 0 and me not in open_valves
-    elephant_at_closed = FLOW_RATES[elephant] > 0 and elephant not in open_valves
-
-    # both of us open our valves
-    if me_at_closed and elephant_at_closed:
-        if me != elephant:
-            max_next = release + with_elephant(
-                me, elephant, open_valves + (me, elephant), release + FLOW_RATES[me] + FLOW_RATES[elephant], time + 1
-            )
-            max_pressure_release = max(max_pressure_release, max_next)
-
-    # i open my valve, elephant moves
-    if me_at_closed:
-        for next_elephant in GRAPH[elephant]:
-            max_next = release + with_elephant(
-                me, next_elephant, open_valves + (me,), release + FLOW_RATES[me], time + 1
-            )
-            max_pressure_release = max(max_pressure_release, max_next)
-
-    # elephant opens their valve, i move
-    if elephant_at_closed:
-        for next_me in GRAPH[me]:
-            max_next = release + with_elephant(
-                next_me, elephant, open_valves + (elephant,), release + FLOW_RATES[elephant], time + 1
-            )
-            max_pressure_release = max(max_pressure_release, max_next)
-
-    # both of us move
-    for next_elephant in GRAPH[elephant]:
-        for next_me in GRAPH[me]:
-            max_next = release + with_elephant(next_me, next_elephant, open_valves, release, time + 1)
-            max_pressure_release = max(max_pressure_release, max_next)
-
-    return max_pressure_release
-
-
 @dataclass
-class ElephantState:
-    time: int
-    valve: str
+class ElephantState(State):
     elephant_valve: str
-    open_valves: Tuple[str, ...]
-    rate: int
-    released: int
 
 
 def second(puzzle):
     graph, flow_rates = parse(puzzle)
-    states = deque([ElephantState(time=1, valve="AA", elephant_valve="AA", open_valves=tuple(), rate=0, released=0)])
+    states = deque([ElephantState(valve="AA", elephant_valve="AA", open_valves=tuple(), rate=0, released=0)])
     run_for = 26
     max_states = 100000
-    while not all(state.time == run_for for state in states):
+    time = 1
+    while time < run_for:
+        time += 1
+
         if len(states) > max_states:
             states = deque(sorted(states, key=lambda s: s.released)[-max_states:])
 
         for _ in range(len(states)):
             state = states.popleft()
-            if state.time == run_for:
-                states.append(state)
-                continue
-
             me_at_closed = flow_rates[state.valve] > 0 and state.valve not in state.open_valves
             elephant_at_closed = flow_rates[state.elephant_valve] > 0 and state.elephant_valve not in state.open_valves
 
@@ -153,7 +101,6 @@ def second(puzzle):
                 new_rate = state.rate + flow_rates[state.valve] + flow_rates[state.elephant_valve]
                 states.append(
                     ElephantState(
-                        time=state.time + 1,
                         valve=state.valve,
                         elephant_valve=state.elephant_valve,
                         open_valves=state.open_valves + (state.valve, state.elephant_valve),
@@ -168,7 +115,6 @@ def second(puzzle):
                 for next_elephant in graph[state.elephant_valve]:
                     states.append(
                         ElephantState(
-                            time=state.time + 1,
                             valve=state.valve,
                             elephant_valve=next_elephant,
                             open_valves=state.open_valves + (state.valve,),
@@ -183,7 +129,6 @@ def second(puzzle):
                 for next_valve in graph[state.valve]:
                     states.append(
                         ElephantState(
-                            time=state.time + 1,
                             valve=next_valve,
                             elephant_valve=state.elephant_valve,
                             open_valves=state.open_valves + (state.elephant_valve,),
@@ -197,7 +142,6 @@ def second(puzzle):
                 for next_elephant in graph[state.elephant_valve]:
                     states.append(
                         ElephantState(
-                            time=state.time + 1,
                             valve=next_valve,
                             elephant_valve=next_elephant,
                             open_valves=state.open_valves,
