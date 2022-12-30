@@ -1,11 +1,8 @@
-from __future__ import annotations
+# heavily inspired by https://topaz.github.io/paste/#XQAAAQBSCgAAAAAAAAA0m0pnuFI8c/T1e7Ae/cusMcunC50HRo4qEuS8gTduVPKHvqa+158jZSEjRPjwhsmfq/WpYLa7b2cLmgfAzlwMkcrv/uDj0oOUznPoxUe1DItVRQVkbgiRARMXmWVIZRd6C14IZf/QA8CGrpnCgd/3qvat+o0WhEWnGLb1CKhc9pGtZY7ao6byl15GEJB2vvnvzPAYRkPb2SAFmIB11zXraLd1DX91D5LKcMVlAX1qkP9salg6v1Z0pc/qtUHdvUzfNWCaJ2FK/bkfWE7QBTfleIOe4z7D0YRnQgh8HytVLx04UN2VC3g+1Npe/6UHaN+8Xn1pi3rYThE+qKgsGjjdPTceyQD9cRTDj3gBgfX1UAhpvyzqI9Dk8F3nCYwFJl0IaniVDIOwKIF31VakghYVl88evTGIMpC9MWTwFhxRK6lsq5Pk0+0Qihl5yqn+3hqedoVBuyWi1Ykufqg5ANdff4OfadPci/CcnSmjIi0NPp6LH0sfrGDWWvV41rCDo8C0+lt3HN0idff+LtVB0BkHXz7uxIEZ7WY83NLOFgaN6eTA2ato5Ps7Ak1KyHNvTQPkEeGRVS+8IPqpSBjgA8kNKlb/XzcJ4V5PzlzWFSnjM52Nt/vrtMeJnTa/C0lSOQhV9PRGBcfVacSU3MY/cSWe1wdThcriGw6AJxCHq5/HPFKOPww8nz2tWREY9Vtb9MfPJUhaUs4cfsCQYcmR2OzdBoWJs8+Qh9j4IUtwBN7bJmb6zse7KdJEhDx78pZPDdVKeTBofuxSzh7sCcSaMkh3RylV0dnl4feg+hstKdt/HYCcgysNdWrkO2npBOxu2z8uCCA6IWUvnO8oRzyp3sepNtjRyhaj1zPRgG/LRbL6jG5AJRlkHc0TwOnE32THbqhFAICQCAorCzcW481ZnB/OTpO3p76iufyuExC3tzHqIVC7h3e2CkccBowIV+K98wL/keFd8SQhhqgoJE9LSkyPrTWfoi6lY7tqU83dNHHmFJqePsel9SmC3LCmRYLwwL1ssOWzkiu1YYCG0xItxCewpoRAqJ6gP2b3Sbw0OEGFpfotpHwFFMtQfHR4Cf9sX4RYHABknaO2JjjVfXVujcnRXtlp94VNJNuxybM1NvWSyRQEF8kuLIhltAaGK2f6eCldLIjqVeDUR/C+Hr59d1MMOJtNHZcpB/NL2Fcn/zh7DwA=
 
-import functools
+import math
 import re
-from collections import deque
-from copy import copy
-from dataclasses import dataclass
-from typing import Tuple, List
+from collections import deque, defaultdict
 
 import common
 
@@ -20,233 +17,117 @@ TEST_PUZZLE = [
     "Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.",
 ]
 
-
-@dataclass(frozen=True)
-class Blueprint:
-    num: int
-    ore_for_ore_robot: int
-    ore_for_clay_robot: int
-    ore_for_obs_robot: int
-    clay_for_obs_robot: int
-    ore_for_geode_robot: int
-    obs_for_geode_robot: int
-
-
-@functools.total_ordering
-class Inventory:
-    bp: Blueprint
-    ore: int = 0
-    ore_robots: int = 1
-    pending_ore_robots: Tuple[int] = ()
-    clay: int = 0
-    clay_robots: int = 0
-    pending_clay_robots: Tuple[int] = ()
-    obs: int = 0
-    obs_robots: int = 0
-    pending_obs_robots: Tuple[int] = ()
-    geodes: int = 0
-    geode_robots: int = 0
-    pending_geode_robots: Tuple[int] = ()
-
-    # def __hash__(self):
-    #     return hash(f"{hash(self.bp)}-ore:{self.ore}-orer{self.ore_robots}-pore{self.pending_ore_robots}-clay{self.clay}-clayr{self.clay_robots}-pclay{self.pending_clay_robots}-obs{self.obs}-obsr{self.obs_robots}-pobs{self.pending_obs_robots}-geode{self.geodes}-geoder{self.geode_robots}-pgeode={self.pending_geode_robots}")
-
-    def __init__(self, bp):
-        self.bp = bp
-
-    def _score(self):
-        # if have ore and obsidian, lose score for how far away you are from buying geode robot
-        return self.geodes
-        # return (
-        #     (self.geodes + self.geode_robots + len(self.pending_geode_robots))
-        #     + (self.obs + self.obs_robots + len(self.pending_obs_robots)) / 2
-        #     + (self.clay + self.clay_robots + len(self.pending_clay_robots)) / 3
-        #     + (self.ore + self.ore_robots + len(self.pending_ore_robots)) / 4
-        # )
-
-    def __lt__(self, other: Inventory):
-        return self._score() < other._score()
-
-    def __eq__(self, other: Inventory):
-        return self._score() == other._score()
-
-    def can_buy_geode_robot(self):
-        return self.ore >= self.bp.ore_for_geode_robot and self.obs >= self.bp.obs_for_geode_robot
-
-    def buy_geode_robot(self):
-        self.ore -= self.bp.ore_for_geode_robot
-        self.obs -= self.bp.obs_for_geode_robot
-        self.pending_geode_robots += (1,)
-
-    def can_buy_obs_robot(self):
-        return self.ore >= self.bp.ore_for_obs_robot and self.clay >= self.bp.clay_for_obs_robot
-
-    def should_buy_obs_robot(self):
-        return (self.obs_robots + len(self.pending_obs_robots)) < self.bp.obs_for_geode_robot
-
-    def buy_obs_robot(self):
-        self.ore -= self.bp.ore_for_obs_robot
-        self.clay -= self.bp.clay_for_obs_robot
-        self.pending_obs_robots += (1,)
-
-    def can_buy_clay_robot(self):
-        return self.ore >= self.bp.ore_for_clay_robot
-
-    def should_buy_clay_robot(self):
-        return (self.clay_robots + len(self.pending_clay_robots)) < self.bp.clay_for_obs_robot
-
-    def buy_clay_robot(self):
-        self.ore -= self.bp.ore_for_clay_robot
-        self.pending_clay_robots += (1,)
-
-    def can_buy_ore_robot(self):
-        return self.ore >= self.bp.ore_for_ore_robot
-
-    def should_buy_ore_robot(self):
-        # return self.ore_robots < self.bp.ore_for_clay_robot + self.bp.ore_for_clay_robot + self.bp.ore_for_obs_robot
-        return (self.ore_robots + len(self.pending_ore_robots)) < max(self.bp.ore_for_ore_robot,
-                                                                      self.bp.ore_for_clay_robot,
-                                                                      self.bp.ore_for_clay_robot,
-                                                                      self.bp.ore_for_obs_robot)
-
-    def buy_ore_robot(self):
-        self.ore -= self.bp.ore_for_ore_robot
-        self.pending_ore_robots += (1,)
-
-
-
-def potential_inventories(i: Inventory) -> List[Inventory]:
-    inventories = [i]
-
-    # can buy geode robot
-    if i.can_buy_geode_robot():
-        ni = copy(i)
-        ni.buy_geode_robot()
-        inventories.append(ni)
-        # return inventories
-
-    # can buy obs robot
-    if i.can_buy_obs_robot() and i.should_buy_obs_robot():
-        ni = copy(i)
-        ni.buy_obs_robot()
-        inventories.append(ni)
-        # return inventories
-
-    # can buy clay robot
-    if i.can_buy_clay_robot() and i.should_buy_clay_robot():
-        ni = copy(i)
-        ni.buy_clay_robot()
-        inventories.append(ni)
-        # return inventories
-
-    # can buy ore robot
-    if i.can_buy_ore_robot() and i.should_buy_ore_robot():
-        ni = copy(i)
-        ni.buy_ore_robot()
-        inventories.append(ni)
-        # return inventories
-
-    # if not len(inventories):
-    #     return [i]
-    return inventories
-
-
-def update(i: Inventory) -> Inventory:
-    # collect new resources
-    for _ in range(i.ore_robots):
-        i.ore += 1
-    for _ in range(i.clay_robots):
-        i.clay += 1
-    for _ in range(i.obs_robots):
-        i.obs += 1
-    for _ in range(i.geode_robots):
-        i.geodes += 1
-
-    # update robots
-    i.pending_ore_robots = tuple(r - 1 for r in i.pending_ore_robots)
-    for p in i.pending_ore_robots:
-        if p == 0:
-            i.ore_robots += 1
-    i.pending_ore_robots = tuple(r for r in i.pending_ore_robots if r != 0)
-
-    i.pending_obs_robots = tuple(r - 1 for r in i.pending_obs_robots)
-    for p in i.pending_obs_robots:
-        if p == 0:
-            i.obs_robots += 1
-    i.pending_obs_robots = tuple(r for r in i.pending_obs_robots if r != 0)
-
-    i.pending_clay_robots = tuple(r - 1 for r in i.pending_clay_robots)
-    for p in i.pending_clay_robots:
-        if p == 0:
-            i.clay_robots += 1
-    i.pending_clay_robots = tuple(r for r in i.pending_clay_robots if r != 0)
-
-    i.pending_geode_robots = tuple(r - 1 for r in i.pending_geode_robots)
-    for p in i.pending_geode_robots:
-        if p == 0:
-            i.geode_robots += 1
-    i.pending_geode_robots = tuple(r for r in i.pending_geode_robots if r != 0)
-
-    return i
+GEODE, OBS, CLAY, ORE = "geode", "obs", "clay", "ore"
 
 
 def get_blueprints(puzzle):
-    blueprints = []
-    for bp in puzzle:
-        blueprints.append(Blueprint(*(map(int, re.findall(BLUEPRINT_REGEX, bp)[0]))))
-    return blueprints
+    bps = {}
+    for line in puzzle:
+        vals = list(map(int, re.findall(BLUEPRINT_REGEX, line)[0]))
+        bps[vals[0]] = {
+            ORE: {ORE: vals[1]},
+            CLAY: {ORE: vals[2]},
+            OBS: {
+                ORE: vals[3],
+                CLAY: vals[4],
+            },
+            GEODE: {
+                ORE: vals[5],
+                OBS: vals[6],
+            },
+        }
+    return bps
 
 
-def quality_level(bp: Blueprint):
-    inventories = deque([Inventory(bp=bp)])
-    # max_inventories = 100000
-    # kill_no_clay_robot_inventories_starting_at = bp.ore_for_clay_robot + 1
-    # kill_no_geode_inventories_starting_at = 20
-    max_geodes = 0
-    min_t_geode = None
-    run_for = 24
-    for t in range(24):
-        print(t, len(inventories))
-        for i in range(len(inventories)):
-            for ni in potential_inventories(inventories.popleft()):
-                inventories.append(ni)
-        inventories = deque([update(i) for i in inventories])
-        max_geodes = max(max_geodes, max(i.geodes for i in inventories))
-        if max_geodes > 0 and min_t_geode is None:
-            min_t_geode = t
-        if min_t_geode is not None and t >= min_t_geode:
-            inventories = deque([i for i in inventories if i.geodes > 0])
-        max_possible_geodes = (run_for - (t + 1)) ** 2 // 2
-        inventories = deque([i for i in inventories if (i.geodes + max_possible_geodes) >= max_geodes])
-        # if len(inventories) > max_inventories:
-        #     inventories = deque(sorted(inventories)[-max_inventories:])
-        # if t >= kill_no_clay_robot_inventories_starting_at:
-        #     inventories = deque(i for i in inventories if i.clay_robots > 0)
-        # if t >= kill_no_geode_inventories_starting_at:
-        #     inventories = deque(i for i in inventories if i.geodes > 0)
-    print(max(i.geodes for i in inventories))
-    return bp.num * max(i.geodes for i in inventories)
+def get_robot_limits(bp):
+    limits = defaultdict(float)
+    limits[GEODE] = float("inf")
+    for costs in bp.values():
+        for mat, cost in costs.items():
+            limits[mat] = max(limits[mat], cost)
+    return limits
+
+
+def get_buildable_robots(bp, resources):
+    buildable = set()
+    for robot, costs in bp.items():
+        if all(resources[mat] >= cost for mat, cost in costs.items()):
+            buildable.add(robot)
+    return buildable
+
+
+def update_resources(resources, robots):
+    res = resources.copy()
+    for robot, count in robots.items():
+        res[robot] += count
+    return res
+
+
+def build_robot(robot, bp, resources, robots):
+    new_resources, new_robots = resources.copy(), robots.copy()
+    new_robots[robot] += 1
+    for mat, cost in bp[robot].items():
+        new_resources[mat] -= cost
+    return new_resources, new_robots
+
+
+def max_geodes(bp, total_time):
+    start_resources = {mat: 0 for mat in bp.keys()}
+    start_robots = start_resources.copy()
+    start_robots[ORE] = 1
+    states = deque([(0, start_resources, start_robots, set())])
+    max_geodes_at_time = defaultdict(int)
+    robot_limits = get_robot_limits(bp)
+    while states:
+        time, resources, robots, skipped = states.popleft()
+        max_geodes_at_time[time] = max(max_geodes_at_time[time], resources[GEODE])
+        if time <= total_time:
+            # huge optimization - only consider the leader states
+            if resources[GEODE] < max_geodes_at_time[time]:
+                continue
+
+            buildable_robots = get_buildable_robots(bp, resources)
+            buildable_robots = set(r for r in buildable_robots if robots[r] < robot_limits[r])
+
+            # if geode buildable, only build it
+            if GEODE in buildable_robots:
+                new_resources, new_robots = build_robot(GEODE, bp, resources, robots)
+                new_resources = update_resources(new_resources, robots)  # exclude new robot
+                states.append((time + 1, new_resources, new_robots, set()))
+            else:
+                # don't build a robot
+                new_resources = update_resources(resources, robots)
+                states.append((time + 1, new_resources, robots, buildable_robots))
+
+                # build buildable robots
+                for buildable_robot in buildable_robots:
+                    # huge optimization - if you could have built a robot and didn't
+                    # build it last time, don't build it this time
+                    if buildable_robot in skipped:
+                        continue
+                    new_resources, new_robots = build_robot(buildable_robot, bp, resources, robots)
+                    new_resources = update_resources(new_resources, robots)  # exclude new robot
+                    states.append((time + 1, new_resources, new_robots, set()))
+    return max_geodes_at_time[total_time]
 
 
 def first(puzzle):
-    puzzle = TEST_PUZZLE
-    blueprints = get_blueprints(puzzle)
-    qls = []
-    for bp in blueprints:
-        qls.append(quality_level(bp))
-        print(qls)
-    return sum(qls)
+    bps = get_blueprints(puzzle)
+    return sum(n * max_geodes(bp, 24) for n, bp in bps.items())
 
 
 def second(puzzle):
-    return -1
+    bps = get_blueprints(puzzle[:3])
+    return math.prod(max_geodes(bp, 32) for _, bp in bps.items())
 
 
 def test():
-    assert first(TEST_PUZZLE) == -1
-    assert second(TEST_PUZZLE) == -1
+    assert first(TEST_PUZZLE) == 33
+    assert first(PUZZLE) == 1147
+    assert second(TEST_PUZZLE) == 56 * 62
+    assert second(PUZZLE) == 3080
 
 
 if __name__ == "__main__":
     print(first(PUZZLE))
-    # print(second(PUZZLE))
+    print(second(PUZZLE))
