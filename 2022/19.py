@@ -107,7 +107,7 @@ def max_geodes(bp, total_time):
                         continue
                     new_resources, new_robots = build_robot(buildable_robot, bp, resources, robots)
                     new_resources = update_resources(new_resources, robots)  # exclude new robot
-                    states.append((time + 1, new_resources, new_robots, set()))
+                    states.appendleft((time + 1, new_resources, new_robots, set()))
     return max_geodes_at_time[total_time]
 
 
