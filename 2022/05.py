@@ -4,16 +4,17 @@ import common
 
 PUZZLE = common.string(5)
 
-TEST_PUZZLE = """    [D]    
-[N] [C]    
-[Z] [M] [P]
- 1   2   3 
-
+TEST_PUZZLE = (
+    "    [D]    \n"
+    + "[N] [C]    \n"
+    + "[Z] [M] [P]\n"
+    + " 1   2   3 \n"
+    + """
 move 1 from 2 to 1
 move 3 from 1 to 3
 move 2 from 2 to 1
 move 1 from 1 to 2
-"""
+""")
 
 
 def parse(puzzle):
@@ -65,8 +66,8 @@ def second(puzzle):
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == "CMZ"
-    assert second(TEST_PUZZLE) == "MCD"
     assert first(PUZZLE) == "DHBJQJCCW"
+    assert second(TEST_PUZZLE) == "MCD"
     assert second(PUZZLE) == "WJVRLSJJT"
 
 

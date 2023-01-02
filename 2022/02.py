@@ -80,8 +80,9 @@ C Z
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 15
+    assert first(PUZZLE) == 11873
     assert second(TEST_PUZZLE) == 12
-
+    assert second(PUZZLE) == 12014
 
 if __name__ == "__main__":
     print(first(PUZZLE))

@@ -32,8 +32,8 @@ TEST_PUZZLE = """2-4,6-8
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 2
-    assert second(TEST_PUZZLE) == 4
     assert first(PUZZLE) == 305
+    assert second(TEST_PUZZLE) == 4
     assert second(PUZZLE) == 811
 
 

@@ -36,7 +36,9 @@ TEST_PUZZLE = """1000
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 24000
+    assert first(PUZZLE) == 70698
     assert second(TEST_PUZZLE) == 45000
+    assert second(PUZZLE) == 206643
 
 
 if __name__ == "__main__":

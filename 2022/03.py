@@ -39,7 +39,9 @@ CrZsJsPPZsGzwwsLwLmpwMDw
 # `pytest *`
 def test():
     assert first(TEST_PUZZLE) == 157
+    assert first(PUZZLE) == 7568
     assert second(TEST_PUZZLE) == 70
+    assert second(PUZZLE) == 2780
 
 
 if __name__ == "__main__":

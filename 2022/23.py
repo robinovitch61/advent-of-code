@@ -90,7 +90,9 @@ def second(puzzle):
 
 def test():
     assert first(TEST_PUZZLE) == 110
+    assert first(PUZZLE) == 3925
     assert second(TEST_PUZZLE) == 20
+    assert second(PUZZLE) == 903
 
 
 if __name__ == "__main__":
