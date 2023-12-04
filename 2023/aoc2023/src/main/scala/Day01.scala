@@ -1,7 +1,7 @@
 import Util.{CharTrie, FileIO}
 
 object Day01 {
-  val fileContent = FileIO.readFile("day01.txt")
+  private val fileContent = FileIO.readFile("day01.txt")
 
   private def solveA(input: String): Int = {
     input
@@ -53,7 +53,7 @@ object Day01 {
   private def findDigit(s: String, trie: CharTrie): Int = {
     0 until s.length foreach (idx => {
       trie.containsPrefix(s.slice(idx, s.length)) match {
-        case Some(t) => {
+        case Some(t) =>
           Array(t, t.reverse).foreach {
             case d if d.matches("\\d") => return d.toInt
             case "one" => return 1
@@ -67,7 +67,6 @@ object Day01 {
             case "nine" => return 9
             case _ =>
           }
-        }
         case _ =>
       }
     })
