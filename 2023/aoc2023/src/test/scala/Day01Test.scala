@@ -12,6 +12,6 @@ class Day01Test extends AnyFlatSpec with Matchers {
     Day01.exampleB() shouldEqual 281
   }
   it should "pass part B" in {
-    Day01.b() shouldEqual 1
+    Day01.b() shouldEqual 52834
   }
 }

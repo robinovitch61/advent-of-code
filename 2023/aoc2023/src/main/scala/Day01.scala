@@ -1,15 +1,15 @@
-import scala.collection.mutable
+import Util.{CharTrie, FileIO}
 
 object Day01 {
-  val fileContent = Util.readFile("day01.txt")
+  val fileContent = FileIO.readFile("day01.txt")
 
-  private def solveA(s: String): Int = {
-    s
+  private def solveA(input: String): Int = {
+    input
       .split("\n")
       .map(s => s.filter(c => c.isDigit))
       .map(s =>
         s(0).toString + s(s.length - 1).toString)
-      .map(s => s.toInt)
+      .map(_.toInt)
       .sum
   }
 
@@ -27,7 +27,7 @@ object Day01 {
     solveA(fileContent)
   }
 
-  private def solveB(s: String): Int = {
+  private def solveB(input: String): Int = {
     val letters = Set(
       "one",
       "two",
@@ -37,24 +37,42 @@ object Day01 {
       "six",
       "seven",
       "eight",
-      "nine"
-    )
+      "nine",
+    ).union("123456789".map(_.toString).toSet)
     val revLetters = letters.map(s => s.reverse)
-    //    val letterTrie = CharTrie.fromSet(letters)
-    //    val revLetterTrie = makeTrie(revLetters)
-    -1
+    val letterTrie = CharTrie.fromStrings(letters)
+    val revLetterTrie = CharTrie.fromStrings(revLetters)
+    input
+      .split("\n")
+      .map(s =>
+        findDigit(s, letterTrie).toString + findDigit(s.reverse, revLetterTrie).toString)
+      .map(_.toInt)
+      .sum
   }
 
-  //  // TODO: just make map
-  //  case class CharTrie(c: Option[Char], children: Map[Char, CharTrie])
-  //
-  //  private object CharTrie {
-  //    def fromSet(strings Set[String]): CharTrie = {
-  //      val res CharTrie(None, Map[Char, CharTrie]())
-  ////      strings.foreach(s => s.foreach(c => ))
-  //      res
-  //    }
-  //  }
+  private def findDigit(s: String, trie: CharTrie): Int = {
+    0 until s.length foreach (idx => {
+      trie.containsPrefix(s.slice(idx, s.length)) match {
+        case Some(t) => {
+          Array(t, t.reverse).foreach {
+            case d if d.matches("\\d") => return d.toInt
+            case "one" => return 1
+            case "two" => return 2
+            case "three" => return 3
+            case "four" => return 4
+            case "five" => return 5
+            case "six" => return 6
+            case "seven" => return 7
+            case "eight" => return 8
+            case "nine" => return 9
+            case _ =>
+          }
+        }
+        case _ =>
+      }
+    })
+    throw new RuntimeException(s"no digit found for $s")
+  }
 
   def exampleB(): Int = {
     val example =
