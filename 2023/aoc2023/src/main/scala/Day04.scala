@@ -18,11 +18,7 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11""".stripMargin
     }
 
     def score(): Int = {
-      var score = 0
-      (0 until matching()).foreach(_ => {
-        if (score == 0) score = 1 else score *= 2
-      })
-      score
+      if (matching() == 0) 0 else math.pow(2, matching() - 1).toInt
     }
   }
 
