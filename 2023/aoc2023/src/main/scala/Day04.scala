@@ -55,10 +55,8 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11""".stripMargin
     val cards = input.split("\n").map(Card.fromLine)
     val cardIdToCount = mutable.Map[Int, Int]().withDefaultValue(1)
     cards.foreach(card => {
-      (0 until cardIdToCount(card.n)).foreach(_ => {
-        (card.n + 1 until card.n + card.matching() + 1).foreach(n => {
-          cardIdToCount.update(n, cardIdToCount(n) + 1)
-        })
+      (card.n + 1 until card.n + card.matching() + 1).foreach(n => {
+        cardIdToCount.update(n, cardIdToCount(n) + cardIdToCount(card.n))
       })
     })
     cards.map(c => cardIdToCount(c.n)).sum
