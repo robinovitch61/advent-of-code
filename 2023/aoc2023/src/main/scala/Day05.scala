@@ -81,28 +81,7 @@ humidity-to-location map:
       (seeds(idx), seeds(idx) + seeds(idx + 1) - 1)
     })
     allMaps.maps.foreach(mapSet => {
-      var mappedIntervalsThisStage = IndexedSeq[(Long, Long)]()
-      var unMappedIntervalsThisStage = IndexedSeq[(Long, Long)]()
-      intervals.foreach(interval => {
-        var anyMapped = false
-        mapSet.foreach(map => {
-          val (mapped, unMapped) = toDestIntervals(interval, map)
-          if (mapped.nonEmpty) {
-            anyMapped = true
-          }
-          //          println(s"mapped $mapped")
-          //          println(s"unMapped $unMapped")
-          mappedIntervalsThisStage = mappedIntervalsThisStage ++ mapped
-          if (mapped.nonEmpty && unMapped.nonEmpty) {
-            unMappedIntervalsThisStage = unMappedIntervalsThisStage ++ unMapped
-          }
-        })
-        if (!anyMapped) {
-          unMappedIntervalsThisStage = unMappedIntervalsThisStage ++ IndexedSeq(interval)
-        }
-      })
-      intervals = (mappedIntervalsThisStage ++ unMappedIntervalsThisStage).distinct
-      //      println(s"\n$intervals\n")
+      intervals = intervals.flatMap(interval => mapInterval(interval, mapSet))
     })
     intervals.map(int => if (int._1 < int._2) int._1 else int._2).min
   }
@@ -115,15 +94,42 @@ humidity-to-location map:
     solveB(fileContent)
   }
 
-  def toDestIntervals(interval: (Long, Long), map: Map): (IndexedSeq[(Long, Long)], IndexedSeq[(Long, Long)]) = {
+  def mapInterval(interval: (Long, Long), maps: Array[Map]): IndexedSeq[(Long, Long)] = {
+    // add mapped on each round, then allUnMapped once nothing further been mapped
+    var res = IndexedSeq[(Long, Long)]()
+    var toMap = IndexedSeq(interval)
+    while (toMap.nonEmpty) {
+      var nextToMap = IndexedSeq[(Long, Long)]()
+      toMap.foreach(i => {
+        var iWasMapped = false
+        maps.foreach(map => {
+          // stop after mapping an interval once, otherwise can get overlaps in unmapped
+          if (nextToMap.isEmpty) {
+            val (mapped, unMapped) = toDestInterval(i, map)
+            if (mapped.nonEmpty) {
+              iWasMapped = true
+              res ++= mapped
+              nextToMap ++= unMapped
+            }
+          }
+        })
+        // if no map mapped the interval, add to the result and stop checking it
+        if (!iWasMapped) {
+          res ++= IndexedSeq(i)
+        }
+      })
+      toMap = nextToMap
+    }
+    res
+  }
+
+  def toDestInterval(interval: (Long, Long), map: Map): (IndexedSeq[(Long, Long)], IndexedSeq[(Long, Long)]) = {
     val mapped = mutable.ArrayBuffer[(Long, Long)]()
     val unMapped = mutable.ArrayBuffer[(Long, Long)]()
     val (iStart, iEnd) = (interval._1, interval._2)
     val (mStart, mEnd) = (map.src, map.src + map.range - 1)
-    println(s"mapping ($iStart, $iEnd) in ($mStart, $mEnd), range ${map.range}")
     val start = math.max(iStart, mStart)
     val end = math.min(iEnd, mEnd)
-    println(s"$start to $end")
     if (start > end) {
       // no overlap - all unmapped
       return (IndexedSeq(), IndexedSeq(interval))
@@ -156,5 +162,4 @@ humidity-to-location map:
     })
     (seeds, Maps(maps = maps))
   }
-
 }
