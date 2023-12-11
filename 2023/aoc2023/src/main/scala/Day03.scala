@@ -1,12 +1,6 @@
-import Util.FileIO
+import Util.{Coord, FileIO, RangeNum, RangeNumWithY}
 
 import scala.collection.mutable
-
-case class Num(n: Int, start: Int, end: Int)
-
-case class NumWithY(n: Int, start: Int, end: Int, y: Int)
-
-case class Coord(x: Int, y: Int)
 
 object Day03 {
   private val fileContent = FileIO.readFile("day03.txt")
@@ -23,7 +17,7 @@ object Day03 {
       |.664.598..""".stripMargin
 
   private def solveA(input: String): Int = {
-    val nums = mutable.Set[NumWithY]()
+    val nums = mutable.Set[RangeNumWithY]()
     val symbolLocations = mutable.Set[Coord]()
     val lines = input.split("\n")
     lines.zipWithIndex.foreach { case (line, y) =>
@@ -32,7 +26,7 @@ object Day03 {
           symbolLocations += Coord(x, y)
         }
         getNumber(line, x) match {
-          case Some(n) => nums += NumWithY(n.n, n.start, n.end, y)
+          case Some(n) => nums += RangeNumWithY(n.n, n.start, n.end, y)
           case None =>
         }
       })
@@ -58,12 +52,12 @@ object Day03 {
   }
 
   private def solveB(input: String): Int = {
-    val starNums = mutable.ArrayBuffer[mutable.Set[Num]]()
+    val starNums = mutable.ArrayBuffer[mutable.Set[RangeNum]]()
     val lines = input.split("\n")
     lines.zipWithIndex.foreach { case (line, y) =>
       (0 until line.length).foreach(x => {
         if (line(x) == '*') {
-          val thisStarNums = mutable.Set[Num]()
+          val thisStarNums = mutable.Set[RangeNum]()
           if (y > 0) {
             Array(-1, 0, 1).foreach(dx => {
               getNumber(lines(y - 1), x + dx).exists(thisStarNums.add)
@@ -92,7 +86,7 @@ object Day03 {
     solveB(fileContent)
   }
 
-  def getNumber(s: String, i: Int): Option[Num] = {
+  def getNumber(s: String, i: Int): Option[RangeNum] = {
     if (i < 0 || i >= s.length || !s(i).isDigit) {
       return None
     }
@@ -104,6 +98,7 @@ object Day03 {
     while (end < s.length && s(end).isDigit) {
       end += 1
     }
-    Some(Num(s.slice(start + 1, end).toInt, start + 1, end))
+    Some(RangeNum(s.slice(start + 1, end).toInt, start + 1, end))
   }
 }
+
